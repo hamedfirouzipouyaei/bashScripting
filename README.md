@@ -1,10 +1,6 @@
----
-
 # 🐧 Linux Essentials Reference
 
----
-
-# 📘 Getting Help in Linux
+## 📘 Getting Help in Linux
 
 ## MAN Pages
 
@@ -264,4 +260,4 @@ watch -n 3 ls -l        # Refresh every 3 seconds
 
 ---
 
-# What New in git
+## What New in git
