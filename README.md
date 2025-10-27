@@ -4,7 +4,7 @@
 
 ---
 
-# 📘 Getting Help in Linux [Test version]
+# 📘 Getting Help in Linux
 
 ## MAN Pages
 
@@ -263,3 +263,5 @@ watch -n 3 ls -l        # Refresh every 3 seconds
 ```
 
 ---
+
+# What New in git
