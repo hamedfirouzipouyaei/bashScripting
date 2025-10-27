@@ -213,5 +213,3 @@ n           # Next search result
 7. **Customize your `~/.vimrc`** - Make VIM work the way you want
 
 ---
-
-*This guide covers the essential VIM commands to get you productive quickly. VIM has many more advanced features, but mastering these basics will make you efficient with this powerful editor.*
