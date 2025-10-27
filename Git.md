@@ -60,8 +60,15 @@ git config --global init.defaultBranch main
 # Set default editor
 git config --global core.editor "vim"
 
-# Set merge tool
+# Or, you can set your default editor to VSCODE
+git config --global core.editor "code --wait"
+
+# Set merge tool 
 git config --global merge.tool vimdiff
+
+# Also, you can set the merge editor to VSCODE
+git config --global merge.tool vscode
+git config --global mergetool.vscode.cmd "code --wait $MERGED"
 
 # Enable colored output
 git config --global color.ui auto
@@ -104,6 +111,8 @@ git config --local setting.name "value"
 ---
 
 ## 📂 Creating Repositories
+
+Important Note: Always before initialization of a new repository make sure the repo is not initialized before by running `git status`
 
 ### Initialize a New Repository
 
@@ -1135,6 +1144,3 @@ You cannot use GitHub without Git.
 ```
 
 ---
-
-*This guide covers Git as a standalone tool and GitHub as a platform built around Git. Understanding the distinction helps you master both tools and know when to use each feature.*
-
