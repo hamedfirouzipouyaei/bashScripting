@@ -131,6 +131,43 @@ tree -f .          # Absolute paths
 
 ---
 
+## 🏗️ The Linux File System
+
+A **file system** controls how data is stored and retrieved. Each group of data is called a **file**, and the structure and logic used to manage files and their names are called **file systems**.
+
+* A file system is a logical collection of files on a partition or disk.  
+* On a Linux system, *everything is considered to be a file*.  
+* Linux file and directory names are **case-sensitive**.
+
+---
+
+## 📁 The Filesystem Hierarchy Standard (FHS)
+
+The **Filesystem Hierarchy Standard (FHS)** defines the directory structure and directory contents in Linux distributions.
+
+### Common Directories
+
+* **/bin** — Contains binaries or user executable files available to all users.  
+* **/sbin** — Contains applications for the superuser (system administration commands).  
+* **/boot** — Holds files required for starting (booting) the system.  
+* **/home** — User home directories. Each user has a subdirectory here (e.g. `/home/user1`).  
+  * The root user has a separate home directory: `/root`.  
+* **/dev** — Contains device files representing hardware devices.  
+* **/etc** — Contains system-wide configuration files.  
+* **/lib** — Shared library files used by different applications.  
+* **/media** — Mount point for removable media (e.g., USB drives).  
+* **/mnt** — Temporary mount point (less used today).  
+* **/tmp** — Stores temporary files created by applications and users.  
+* **/proc** — Virtual directory containing runtime system information (e.g., CPU, RAM, kernel).  
+* **/sys** — Contains information about devices, drivers, and kernel features.  
+* **/srv** — Contains data served by system services.  
+* **/run** — Temporary filesystem that resides in RAM and stores runtime data.  
+* **/usr** — Contains user binaries, libraries, documentation, and other utilities.  
+  * Example: many distributions store executables in `/usr/bin` and `/usr/sbin`.  
+* **/var** — Contains variable data like logs, caches, and spool files.  
+
+---
+
 ## 📜 The `ls` Command
 
 ### Syntax
@@ -260,96 +297,115 @@ watch -n 3 ls -l        # Refresh every 3 seconds
 
 ---
 
-## 📁 Working with Files and Directories (touch, mkdir, cp, mv, rm, shred)
+## � Piping and Command Redirection
+
+Every Linux command or program we run has **three data streams**:
+
+1. **STDIN (0)** — Standard Input  
+2. **STDOUT (1)** — Standard Output  
+3. **STDERR (2)** — Standard Error  
+
+### Using Pipes
+
+A **pipe** (`|`) connects the output of one command to the input of another.
+
+```bash
+command1 | command2 | command3
+```
+
+This allows you to chain multiple commands together efficiently.
+
+---
+
+## �📁 Working with Files and Directories (`touch`, `mkdir`, `cp`, `mv`, `rm`, `shred`)
 
 ### Creating and Managing Files/Directories
 
 ```bash
-# creating a new file or updating the timestamps if the file already exists
+# Create a new file or update its timestamps
 touch filename
 
-# creating a new directory
+# Create a new directory
 mkdir dir1
 
-# creating a directory and its parents as well
+# Create a directory along with its parent directories
 mkdir -p mydir1/mydir2/mydir3
 ```
 
 ---
 
-### The `cp` command
+### The `cp` Command — Copy Files and Directories
 
 ```bash
-# copying file1 to file2 in the current directory
+# Copy file1 to file2 in the current directory
 cp file1 file2
 
-# copying file1 to dir1 as another name (file2)
+# Copy file1 to dir1 as file2
 cp file1 dir1/file2
 
-# copying a file prompting the user if it overwrites the destination
+# Copy a file, prompting before overwrite
 cp -i file1 file2
 
-# preserving the file permissions, group and ownership when copying
+# Preserve file permissions, group, and ownership
 cp -p file1 file2
 
-# being verbose
+# Be verbose (show copied files)
 cp -v file1 file2
 
-# recursively copying dir1 to dir2 in the current directory
+# Recursively copy dir1 to dir2
 cp -r dir1 dir2/
 
-# copy more source files and directories to a destination directory
+# Copy multiple files and directories to a destination
 cp -r file1 file2 dir1 dir2 destination_directory/
 ```
 
 ---
 
-### The `mv` command
+### The `mv` Command — Move or Rename Files and Directories
 
 ```bash
-# renaming file1 to file2
+# Rename file1 to file2
 mv file1 file2
 
-# moving file1 to dir1 
+# Move file1 to dir1
 mv file1 dir1/
 
-# moving a file prompting the user if it overwrites the destination file
+# Prompt before overwriting a destination file
 mv -i file1 dir1/
 
-# preventing an existing file from being overwritten
+# Prevent overwriting an existing file
 mv -n file1 dir1/
 
-# moving only if the source file is newer than the destination file or when the destination file is missing
+# Move only if the source is newer or the destination is missing
 mv -u file1 dir1/
 
-# moving file1 to dir1 as file2
+# Move file1 to dir1 and rename it file2
 mv file1 dir1/file2
 
-# moving more source files and directories to a destination directory
+# Move multiple sources to a destination directory
 mv file1 file2 dir1/ dir2/ destination_directory/
 ```
 
 ---
 
-### The `rm` command
+### The `rm` Command — Remove Files and Directories
 
 ```bash
-# removing a file
+# Remove a file
 rm file1
 
-# being verbose when removing a file
+# Verbosely remove a file
 rm -v file1
 
-# removing a directory
+# Remove a directory
 rm -r dir1/
 
-# removing a directory without prompting
+# Remove without prompting (force)
 rm -rf dir1/
 
-# removing a file and a directory prompting the user for confirmation
+# Prompt before removing each file or directory
 rm -ri file1 dir1/
 
-# secure removal of a file (verbose with 100 rounds of overwriting)
+# Securely remove a file (overwrite 100 times)
 shred -vu -n 100 file1
 ```
-
