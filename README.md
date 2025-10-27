@@ -297,7 +297,7 @@ watch -n 3 ls -l        # Refresh every 3 seconds
 
 ---
 
-## � Piping and Command Redirection
+## 🔄 Piping and Command Redirection
 
 Every Linux command or program we run has **three data streams**:
 
@@ -314,6 +314,165 @@ command1 | command2 | command3
 ```
 
 This allows you to chain multiple commands together efficiently.
+
+---
+
+## 🔍 The `grep` Command — Pattern Searching
+
+`grep` (Global Regular Expression Print) is one of the most powerful and frequently used commands in Linux for searching text patterns.
+
+### `grep` Syntax
+
+```bash
+grep [OPTIONS] PATTERN [FILE...]
+```
+
+### Essential `grep` Options
+
+| Option | Description                           | Example                        |
+|--------|---------------------------------------|--------------------------------|
+| `-i`   | Case-insensitive search              | `grep -i "error" logfile.txt`  |
+| `-v`   | Invert match (exclude lines)         | `grep -v "debug" logfile.txt`  |
+| `-n`   | Show line numbers                    | `grep -n "function" script.sh` |
+| `-c`   | Count matching lines                 | `grep -c "error" logfile.txt`  |
+| `-l`   | Show only filenames with matches     | `grep -l "TODO" *.txt`         |
+| `-r`   | Recursive search in directories      | `grep -r "password" /etc/`     |
+| `-w`   | Match whole words only               | `grep -w "cat" file.txt`       |
+| `-A n` | Show n lines after match             | `grep -A 3 "error" log.txt`    |
+| `-B n` | Show n lines before match            | `grep -B 2 "error" log.txt`    |
+| `-C n` | Show n lines before and after match  | `grep -C 2 "error" log.txt`    |
+
+---
+
+## 🚰 Powerful Pipe Examples
+
+### Basic Pipe Operations
+
+```bash
+# File listing and filtering
+ls -lSh /etc/ | head                # See the first 10 files by size
+ls -la | grep "\.txt$"              # Find files ending with .txt
+ls -la | grep "^d" | wc -l          # Count directories
+
+# Process management
+ps -ef | grep sshd                  # Check if sshd is running
+ps aux | grep firefox               # Search for specific processes
+ps aux --sort=-%mem | head -n 3     # Show top 3 processes by memory consumption
+
+# Search command history
+history | grep "git"
+
+# Search in multiple files
+cat *.log | grep "ERROR"
+```
+
+### Advanced Pipe Combinations
+
+```bash
+# Find largest files in current directory
+ls -la | grep "^-" | sort -k5 -n | tail -5
+
+# Search for processes and kill them
+ps aux | grep "python" | grep -v grep | awk '{print $2}' | xargs kill
+
+# Find files modified today and search for patterns
+find . -type f -mtime 0 | xargs grep -l "function"
+
+# Monitor log files in real-time
+tail -f /var/log/syslog | grep --color=always "error"
+
+# Search and format output
+grep -r "TODO" . | cut -d: -f1 | sort | uniq
+
+# Chain multiple filters
+cat access.log | grep "404" | grep -v "bot" | awk '{print $1}' | sort | uniq -c | sort -nr
+```
+
+### File Content Analysis
+
+```bash
+# Find duplicate lines
+sort file.txt | uniq -d
+
+# Count word frequency
+cat file.txt | tr ' ' '\n' | sort | uniq -c | sort -nr
+
+# Extract email addresses
+grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' contacts.txt
+
+# Find IP addresses in logs
+grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' access.log
+```
+
+### System Administration Examples
+
+```bash
+# Check disk usage of directories
+du -sh */ | sort -hr | head -10
+
+# Find large files
+find / -type f -size +100M 2>/dev/null | head -10
+
+# Check network connections
+netstat -an | grep ESTABLISHED | wc -l
+
+# Monitor CPU usage
+ps aux | sort -k3 -nr | head -10
+
+# Search configuration files
+find /etc -name "*.conf" | xargs grep -l "database"
+```
+
+### Security and Log Analysis
+
+```bash
+# Monitor authentication failures
+cat -n /var/log/auth.log | grep -ai "authentication failure" | wc -l
+
+# Save authentication failures to file (combining piping and redirection)
+cat -n /var/log/auth.log | grep -ai "authentication failure" > auth.txt
+
+# Analyze failed login attempts with details
+grep "Failed password" /var/log/auth.log | awk '{print $1, $2, $3, $11}' | sort | uniq -c
+
+# Monitor real-time authentication events
+tail -f /var/log/auth.log | grep --color=always -i "failed\|success\|invalid"
+```
+
+### Redirection Operators
+
+```bash
+# Basic output redirection
+ps aux > running_processes.txt         # Save process list to file
+who -H > loggedin_users.txt            # Save logged-in users to file
+command > file.txt                     # Overwrite file
+command >> file.txt                    # Append to file
+
+# Practical redirection examples  
+id >> loggedin_users.txt               # Append user ID info to existing file
+
+# Separate output and error streams
+tail -n 10 /var/log/*.log > output.txt 2> errors.txt    # Separate files
+command > output.txt 2> error.txt                       # Standard separation
+
+# Redirect both stdout and stderr to same file
+tail -n 2 /etc/passwd /etc/shadow > output_errors.txt 2>&1    # Combined output
+command > file.txt 2>&1                                       # Redirect both to file
+
+# Discard unwanted output
+command 2>/dev/null                    # Discard errors only
+command > /dev/null 2>&1               # Discard all output
+
+# Input redirection
+grep "pattern" < input.txt
+
+# Here document
+grep "search" << EOF
+line 1
+line 2 with search term
+line 3
+EOF
+```
 
 ---
 
@@ -407,5 +566,182 @@ rm -rf dir1/
 rm -ri file1 dir1/
 
 # Securely remove a file (overwrite 100 times)
+# Securely remove a file (overwrite 100 times)
 shred -vu -n 100 file1
+```
+
+---
+
+## 🔍 Finding Files (`find`, `locate`)
+
+Linux provides powerful tools for locating files and directories across the filesystem.
+
+---
+
+## 📍 The `locate` Command (plocate)
+
+`locate` is a fast way to find files by name using a pre-built database. It's typically a symlink to `plocate` on modern systems.
+
+### Database Management
+
+```bash
+# Update the locate database (run as root)
+sudo updatedb
+
+# The database is usually updated daily via cron
+```
+
+### Basic `locate` Usage
+
+```bash
+# Find files by name (expands to *filename*)
+locate filename
+
+# Case-insensitive search
+locate -i filename
+
+# Find by exact name using regex
+locate -r '/filename$'
+
+# Search only the basename (not full path)
+locate -b filename
+
+# Use regular expressions
+locate -r 'regex'
+
+# Check that located files actually exist
+locate -e filename
+
+# Limit number of results
+locate -l 10 filename
+```
+
+### Practical `locate` Examples
+
+```bash
+# Find all Python files
+locate "*.py"
+
+# Find configuration files
+locate -i config
+
+# Find files in specific directory
+locate -r '^/etc/.*\.conf$'
+
+# Find recently accessed files (combine with other tools)
+locate "*.log" | head -20
+```
+
+---
+
+## 🔎 The `which` Command
+
+Find the location of executable commands in your PATH.
+
+```bash
+# Show command path
+which command
+
+# Show all matching paths
+which -a command
+
+# Examples
+which python3           # /usr/bin/python3
+which -a python         # Show all python binaries in PATH
+which ls                # /usr/bin/ls
+which cd                # (no output - cd is a shell builtin)
+```
+
+---
+
+## 🔍 The `find` Command
+
+`find` is the most powerful and flexible file searching tool in Linux.
+
+### `find` Syntax
+
+```bash
+find PATH [OPTIONS] [ACTIONS]
+```
+
+### Essential `find` Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `-type f` | Regular files | `find /home -type f` |
+| `-type d` | Directories | `find /var -type d` |
+| `-type l` | Symbolic links | `find /usr -type l` |
+| `-name pattern` | Match filename (case-sensitive) | `find . -name "*.txt"` |
+| `-iname pattern` | Match filename (case-insensitive) | `find . -iname "*.TXT"` |
+| `-size +n` | Files larger than n | `find . -size +1M` |
+| `-size -n` | Files smaller than n | `find . -size -1K` |
+| `-perm mode` | Files with specific permissions | `find . -perm 755` |
+| `-user owner` | Files owned by user | `find /home -user john` |
+| `-group group` | Files owned by group | `find /var -group www-data` |
+| `-mtime n` | Modified n days ago | `find . -mtime -7` |
+| `-atime n` | Accessed n days ago | `find . -atime +30` |
+| `-ctime n` | Changed n days ago | `find . -ctime -1` |
+
+### Practical `find` Examples
+
+```bash
+# Find large files (bigger than 1MB)
+find ~ -type f -size +1M
+
+# Find empty files and directories
+find /tmp -empty
+
+# Find files modified in last 7 days
+find /var/log -type f -mtime -7
+
+# Find files with specific permissions
+find /usr/bin -type f -perm 755
+
+# Find and list files with details
+find /etc -name "*.conf" -ls
+
+# Find files by multiple criteria
+find /home -type f -name "*.jpg" -size +1M -mtime -30
+
+# Find and execute commands
+find /tmp -name "*.tmp" -delete
+find /var/log -name "*.log" -exec ls -lh {} \;
+
+# Find files excluding certain directories
+find / -type f -name "*.log" -not -path "/proc/*" -not -path "/sys/*"
+
+# Find by inode number
+find /home -inum 123456
+
+# Find files with multiple links
+find /usr -type f -links +1
+
+# Combine with other commands
+find /var/log -name "*.log" | xargs grep -l "error"
+find /home -type f -name "*.txt" | xargs wc -l
+```
+
+### Advanced `find` Usage
+
+```bash
+# Find files and copy them
+find /source -name "*.backup" -exec cp {} /destination/ \;
+
+# Find and archive files
+find /logs -name "*.log" -mtime +30 -exec tar -czf old_logs.tar.gz {} +
+
+# Find files by content and size
+find /var -type f -size +10M -exec grep -l "error" {} \;
+
+# Find files with complex time conditions
+find /tmp -type f \( -atime +7 -o -mtime +7 \)
+
+# Find setuid files (security check)
+find /usr -type f -perm -4000 -ls
+
+# Find world-writable files
+find /home -type f -perm -002
+
+# Find files newer than a reference file
+find /etc -newer /etc/passwd
 ```
