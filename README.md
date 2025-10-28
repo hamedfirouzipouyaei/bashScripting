@@ -1339,3 +1339,571 @@ gunzip file.txt.gz
 ```
 
 ---
+
+## 👥 User Account Management
+
+Linux is a multi-user system where proper user account management is essential for security and system administration.
+
+---
+
+## 🔐 Password and Shadow Files
+
+### `/etc/passwd` - User Account Information
+
+The `/etc/passwd` file stores basic user account information. It's readable by all users but only writable by root.
+
+**File format:** Each line represents a user with 7 fields separated by colons:
+
+```text
+username:x:UID:GID:comment:home_directory:shell
+```
+
+**Field breakdown:**
+
+1. **Username**: Login name
+2. **Password**: `x` means password is in `/etc/shadow`
+3. **UID**: User ID (0 = root, 1-999 = system, 1000+ = regular users)
+4. **GID**: Primary Group ID
+5. **Comment**: Full name or description (GECOS field)
+6. **Home Directory**: User's home directory path
+7. **Shell**: Default shell for the user
+
+**View passwd file:**
+
+```bash
+# View entire file
+cat /etc/passwd
+
+# View specific user
+grep username /etc/passwd
+
+# Example line:
+# john:x:1001:1001:John Doe:/home/john:/bin/bash
+```
+
+### `/etc/shadow` - Encrypted Passwords
+
+The `/etc/shadow` file stores encrypted passwords and password policies. Only readable by root for security.
+
+**File format:** 9 fields separated by colons:
+
+```text
+username:encrypted_password:last_change:min:max:warn:inactive:expire:reserved
+```
+
+**Field breakdown:**
+
+1. **Username**: Login name
+2. **Encrypted Password**: Hashed password (or `!`/`*` if locked)
+3. **Last Change**: Days since Jan 1, 1970 when password was last changed
+4. **Minimum Days**: Days before password can be changed again
+5. **Maximum Days**: Days until password must be changed
+6. **Warning Days**: Days before expiration to warn user
+7. **Inactive Days**: Days after expiration before account is disabled
+8. **Expiration Date**: Date when account expires
+9. **Reserved**: For future use
+
+**View shadow file (requires root):**
+
+```bash
+# View entire file
+sudo cat /etc/shadow
+
+# View specific user
+sudo grep username /etc/shadow
+```
+
+---
+
+## 👤 Groups and User ID
+
+### Understanding Groups
+
+Groups allow multiple users to share access to files and resources.
+
+**Group types:**
+
+* **Primary Group**: User's main group (GID in `/etc/passwd`)
+* **Secondary Groups**: Additional groups user belongs to
+
+### `/etc/group` - Group Information
+
+```bash
+# View all groups
+cat /etc/group
+
+# Format: group_name:password:GID:user_list
+# Example: developers:x:1005:john,alice,bob
+```
+
+### The `id` Command
+
+Display user and group information:
+
+```bash
+# Show current user's info
+id
+
+# Show specific user's info
+id username
+
+# Show only UID
+id -u username
+
+# Show only GID
+id -g username
+
+# Show all groups
+id -G username
+
+# Show group names instead of numbers
+id -Gn username
+
+# Examples:
+id
+# Output: uid=1001(john) gid=1001(john) groups=1001(john),27(sudo),1005(developers)
+```
+
+### The `groups` Command
+
+List groups a user belongs to:
+
+```bash
+# Show current user's groups
+groups
+
+# Show specific user's groups
+groups username
+
+# Example:
+groups john
+# Output: john : john sudo developers
+```
+
+---
+
+## ➕ Creating Users
+
+### The `useradd` Command
+
+Create a new user account:
+
+```bash
+# Basic user creation
+sudo useradd username
+
+# Create user with home directory
+sudo useradd -m username
+
+# Create user with specific shell
+sudo useradd -m -s /bin/bash username
+
+# Create user with specific UID
+sudo useradd -m -u 1500 username
+
+# Create user with comment
+sudo useradd -m -c "Full Name" username
+
+# Create user and add to groups
+sudo useradd -m -G sudo,developers username
+
+# Full example with all options
+sudo useradd -m -s /bin/bash -c "John Doe" -G sudo,developers john
+```
+
+**Common `useradd` options:**
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `-m` | Create home directory | `useradd -m john` |
+| `-d` | Specify home directory | `useradd -m -d /custom/path john` |
+| `-s` | Specify shell | `useradd -s /bin/zsh john` |
+| `-c` | Add comment/full name | `useradd -c "John Doe" john` |
+| `-g` | Primary group | `useradd -g developers john` |
+| `-G` | Secondary groups | `useradd -G sudo,docker john` |
+| `-u` | Specify UID | `useradd -u 1500 john` |
+| `-e` | Account expiration date | `useradd -e 2024-12-31 john` |
+
+### Set User Password
+
+```bash
+# Set password for user
+sudo passwd username
+
+# You'll be prompted to enter password twice
+
+# Force user to change password on first login
+sudo passwd -e username
+```
+
+### The `adduser` Command (Debian/Ubuntu)
+
+Interactive user creation (wrapper around `useradd`):
+
+```bash
+# Interactive user creation
+sudo adduser username
+
+# This will prompt you for:
+# - Password
+# - Full name
+# - Room number
+# - Work phone
+# - Home phone
+# - Other information
+```
+
+---
+
+## ✏️ Modifying and Deleting Users
+
+### The `usermod` Command - Modify User
+
+Change user account attributes:
+
+```bash
+# Change username
+sudo usermod -l newname oldname
+
+# Change home directory
+sudo usermod -d /new/home username
+
+# Change default shell
+sudo usermod -s /bin/zsh username
+
+# Change user's comment
+sudo usermod -c "New Full Name" username
+
+# Add user to group (append)
+sudo usermod -aG groupname username
+
+# Change primary group
+sudo usermod -g groupname username
+
+# Lock user account
+sudo usermod -L username
+
+# Unlock user account
+sudo usermod -U username
+
+# Set account expiration
+sudo usermod -e 2024-12-31 username
+
+# Change UID
+sudo usermod -u 1500 username
+```
+
+**Common `usermod` options:**
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `-l` | Change username | `usermod -l newname old` |
+| `-d` | Change home directory | `usermod -d /new/home user` |
+| `-m` | Move home contents | `usermod -d /new/home -m user` |
+| `-s` | Change shell | `usermod -s /bin/zsh user` |
+| `-aG` | Add to groups (append) | `usermod -aG sudo user` |
+| `-g` | Change primary group | `usermod -g developers user` |
+| `-L` | Lock account | `usermod -L user` |
+| `-U` | Unlock account | `usermod -U user` |
+
+### The `userdel` Command - Delete User
+
+Remove user accounts:
+
+```bash
+# Delete user (keep home directory)
+sudo userdel username
+
+# Delete user and home directory
+sudo userdel -r username
+
+# Force delete (even if logged in)
+sudo userdel -f username
+
+# Delete user, home, and mail spool
+sudo userdel -r username
+```
+
+**⚠️ Warning:** Deleting a user is permanent. Backup important data first!
+
+### Change Password Policies
+
+```bash
+# Change password expiration
+sudo chage -M 90 username    # Must change every 90 days
+
+# Set minimum days between changes
+sudo chage -m 7 username     # Wait 7 days before changing again
+
+# Set warning days
+sudo chage -W 14 username    # Warn 14 days before expiration
+
+# View password aging info
+sudo chage -l username
+
+# Force password change on next login
+sudo chage -d 0 username
+```
+
+---
+
+## 👨‍💼 Creating Admin Users
+
+### Adding User to Sudo Group
+
+Give a user administrative privileges:
+
+```bash
+# Add existing user to sudo group
+sudo usermod -aG sudo username
+
+# On RHEL/CentOS, use wheel group
+sudo usermod -aG wheel username
+
+# Verify user is in sudo group
+groups username
+```
+
+### Create New Admin User (Complete Process)
+
+```bash
+# 1. Create user with home directory
+sudo useradd -m -s /bin/bash -c "Admin User" adminuser
+
+# 2. Set password
+sudo passwd adminuser
+
+# 3. Add to sudo group
+sudo usermod -aG sudo adminuser
+
+# 4. Verify
+groups adminuser
+id adminuser
+
+# 5. Test sudo access (as the new user)
+su - adminuser
+sudo whoami    # Should output: root
+```
+
+### Configure Sudo Access (Advanced)
+
+Edit sudo configuration:
+
+```bash
+# Edit sudoers file (always use visudo!)
+sudo visudo
+
+# Grant specific user all sudo privileges
+username ALL=(ALL:ALL) ALL
+
+# Grant passwordless sudo
+username ALL=(ALL) NOPASSWD:ALL
+
+# Grant specific commands only
+username ALL=(ALL) /usr/bin/apt, /usr/bin/systemctl
+```
+
+**⚠️ Important:** Always use `visudo` to edit `/etc/sudoers` - it checks syntax before saving!
+
+---
+
+## 🏢 Group Management
+
+### Creating Groups
+
+```bash
+# Create new group
+sudo groupadd groupname
+
+# Create group with specific GID
+sudo groupadd -g 1500 groupname
+
+# Example:
+sudo groupadd developers
+sudo groupadd -g 2000 projects
+```
+
+### Modifying Groups
+
+```bash
+# Change group name
+sudo groupmod -n newname oldname
+
+# Change GID
+sudo groupmod -g 2500 groupname
+
+# Add user to group
+sudo usermod -aG groupname username
+
+# Remove user from group (set all groups, exclude one)
+sudo gpasswd -d username groupname
+```
+
+### Deleting Groups
+
+```bash
+# Delete group
+sudo groupdel groupname
+
+# Note: Cannot delete a user's primary group
+```
+
+### Managing Group Members
+
+```bash
+# Add user to group
+sudo gpasswd -a username groupname
+
+# Remove user from group
+sudo gpasswd -d username groupname
+
+# Set group administrators
+sudo gpasswd -A admin_user groupname
+
+# View group members
+getent group groupname
+```
+
+---
+
+## 📊 User Account Monitoring
+
+### View Logged-In Users
+
+```bash
+# Show currently logged-in users
+who
+
+# Show current user
+whoami
+
+# Detailed info about logged-in users
+w
+
+# Show login history
+last
+
+# Show last logins per user
+lastlog
+
+# Show failed login attempts
+sudo lastb
+```
+
+### Check User Information
+
+```bash
+# View user details
+id username
+finger username        # If installed
+getent passwd username
+
+# View when password expires
+sudo chage -l username
+
+# View user's groups
+groups username
+
+# Check if user account is locked
+sudo passwd -S username
+# Output: username P = usable, L = locked, NP = no password
+```
+
+### User Activity Monitoring
+
+```bash
+# Show who is logged in and what they're doing
+w
+
+# Show login history
+last username
+
+# Show recent logins
+lastlog
+
+# Show failed login attempts (requires root)
+sudo lastb
+
+# Show specific user's last login
+lastlog -u username
+
+# Check active user sessions
+who -a
+```
+
+### Auditing Commands
+
+```bash
+# List all users
+cut -d: -f1 /etc/passwd
+
+# List all regular users (UID >= 1000)
+awk -F: '$3 >= 1000 {print $1}' /etc/passwd
+
+# List users with sudo access
+getent group sudo
+
+# Count total users
+wc -l /etc/passwd
+
+# Find users with no password
+sudo awk -F: '($2 == "") {print $1}' /etc/shadow
+
+# Find locked accounts
+sudo passwd -S --all | grep ' L '
+
+# Check for duplicate UIDs
+cut -d: -f3 /etc/passwd | sort | uniq -d
+```
+
+---
+
+## 🛡️ User Security Best Practices
+
+1. **Use strong passwords**: Enforce password policies with `pam_pwquality`
+2. **Limit sudo access**: Only give admin rights to trusted users
+3. **Disable unused accounts**: Lock or delete accounts not in use
+4. **Regular audits**: Check for unauthorized users and suspicious activity
+5. **Use SSH keys**: Prefer SSH keys over passwords for remote access
+6. **Set password expiration**: Force regular password changes
+7. **Monitor logs**: Check `/var/log/auth.log` for suspicious activity
+8. **Disable root login**: Use sudo instead of logging in as root
+
+```bash
+# Lock unused account
+sudo usermod -L username
+
+# Set password expiration
+sudo chage -M 90 username
+
+# Disable root login via SSH
+# Edit /etc/ssh/sshd_config:
+# PermitRootLogin no
+```
+
+---
+
+## 📋 Quick Reference Commands
+
+```bash
+# User Operations
+sudo useradd -m -s /bin/bash username    # Create user
+sudo passwd username                      # Set password
+sudo usermod -aG sudo username           # Add to sudo group
+sudo userdel -r username                 # Delete user with home
+
+# Group Operations
+sudo groupadd groupname                  # Create group
+sudo usermod -aG groupname username      # Add user to group
+sudo gpasswd -d username groupname       # Remove from group
+sudo groupdel groupname                  # Delete group
+
+# Information
+id username                              # User ID and groups
+groups username                          # List user's groups
+who                                      # Logged-in users
+last                                     # Login history
+sudo chage -l username                   # Password info
+```
+
+---
