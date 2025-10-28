@@ -1164,3 +1164,178 @@ sha256sum original.iso > checksum.txt
 # ... transfer file ...
 sha256sum -c checksum.txt
 ```
+
+---
+
+## 🗜️ File Compression and Archiving
+
+Linux provides powerful tools for compressing files and creating archives. The most common are `tar` (for archiving) and `gzip` (for compression).
+
+### 📦 The `tar` Command - Tape Archive
+
+`tar` creates archive files (combining multiple files into one) but doesn't compress by default. It's often used with compression tools.
+
+**Common `tar` flags:**
+
+| Flag | Meaning | Description |
+|------|---------|-------------|
+| `-c` | **c**reate | Create a new archive |
+| `-x` | e**x**tract | Extract files from archive |
+| `-t` | lis**t** | List contents of archive |
+| `-v` | **v**erbose | Show files being processed |
+| `-f` | **f**ile | Specify archive filename (must be last flag) |
+| `-z` | g**z**ip | Compress/decompress with gzip |
+| `-j` | b**j**ip2 | Compress/decompress with bzip2 |
+| `-J` | xz | Compress/decompress with xz |
+| `-C` | **C**hange directory | Extract to specific directory |
+
+#### Basic `tar` Examples
+
+```bash
+# Create an archive
+tar -cf archive.tar file1 file2 directory/
+
+# Create archive with gzip compression
+tar -czf archive.tar.gz file1 file2 directory/
+
+# Create archive with verbose output
+tar -cvzf archive.tar.gz directory/
+
+# Extract archive
+tar -xf archive.tar
+
+# Extract gzipped archive
+tar -xzf archive.tar.gz
+
+# Extract to specific directory
+tar -xzf archive.tar.gz -C /destination/path/
+
+# List contents without extracting
+tar -tzf archive.tar.gz
+
+# Extract specific file
+tar -xzf archive.tar.gz path/to/specific/file
+```
+
+#### Understanding `tar` Flag Combinations
+
+```bash
+# tar -czf archive.tar.gz files/
+# c = create archive
+# z = compress with gzip
+# f = use this filename (archive.tar.gz)
+
+# tar -xzvf archive.tar.gz
+# x = extract
+# z = decompress with gzip
+# v = verbose (show files)
+# f = from this filename
+```
+
+---
+
+### 🗜️ The `gzip` Command - GNU Zip
+
+`gzip` compresses individual files, replacing the original with a `.gz` version. For multiple files, use with `tar`.
+
+**Common `gzip` flags:**
+
+| Flag | Description |
+|------|-------------|
+| `-c` | Write to stdout (keep original) |
+| `-d` | Decompress (same as `gunzip`) |
+| `-k` | Keep original file |
+| `-r` | Recursive (compress directories) |
+| `-v` | Verbose (show compression ratio) |
+| `-1` to `-9` | Compression level (1=fastest, 9=best) |
+
+#### Basic `gzip` Examples
+
+```bash
+# Compress a file (replaces original)
+gzip file.txt
+# Result: file.txt.gz
+
+# Compress and keep original
+gzip -k file.txt
+
+# Decompress
+gzip -d file.txt.gz
+# OR
+gunzip file.txt.gz
+
+# Compress with best compression
+gzip -9 file.txt
+
+# Compress and show details
+gzip -v file.txt
+
+# Compress multiple files
+gzip file1.txt file2.txt file3.txt
+```
+
+---
+
+### 🔗 Common Compression Workflows
+
+#### Create Compressed Archives
+
+```bash
+# Compress directory with gzip (most common)
+tar -czf backup.tar.gz /path/to/directory/
+
+# Compress with bzip2 (better compression, slower)
+tar -cjf backup.tar.bz2 /path/to/directory/
+
+# Compress with xz (best compression, slowest)
+tar -cJf backup.tar.xz /path/to/directory/
+```
+
+#### Extract Compressed Archives
+
+```bash
+# Extract .tar.gz
+tar -xzf archive.tar.gz
+
+# Extract .tar.bz2
+tar -xjf archive.tar.bz2
+
+# Extract .tar.xz
+tar -xJf archive.tar.xz
+
+# Extract to specific location
+tar -xzf archive.tar.gz -C /destination/
+```
+
+#### Compression Comparison
+
+| Format | Extension | Speed | Compression | Command |
+|--------|-----------|-------|-------------|---------|
+| gzip | `.tar.gz` or `.tgz` | Fast | Good | `tar -czf` |
+| bzip2 | `.tar.bz2` | Medium | Better | `tar -cjf` |
+| xz | `.tar.xz` | Slow | Best | `tar -cJf` |
+
+**💡 Tip:** Use `.tar.gz` for general purposes - it's the standard and has good balance of speed and compression.
+
+---
+
+### 📋 Quick Reference
+
+```bash
+# Create compressed archive
+tar -czf archive.tar.gz directory/
+
+# Extract compressed archive
+tar -xzf archive.tar.gz
+
+# View contents
+tar -tzf archive.tar.gz
+
+# Compress single file
+gzip file.txt
+
+# Decompress single file
+gunzip file.txt.gz
+```
+
+---
