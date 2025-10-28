@@ -699,8 +699,26 @@ git show --name-only commit-hash
 
 ### Git Aliases
 
+Git aliases are custom shortcuts that let you create abbreviated commands for frequently used Git operations. They save time and reduce typing.
+
+**Why use aliases?**
+
+* **Efficiency**: Type less, work faster
+* **Consistency**: Standardize commands across your workflow
+* **Customization**: Create commands that match your working style
+* **Complex commands**: Simplify long command chains into short aliases
+
+**How aliases work:**
+
+When you create an alias like `st` for `status`, Git translates `git st` into `git status` automatically.
+
+#### Creating Aliases
+
 ```bash
-# Create shortcuts for common commands
+# Basic syntax
+git config --global alias.<alias-name> '<git-command>'
+
+# Common useful aliases
 git config --global alias.st status
 git config --global alias.co checkout
 git config --global alias.br branch
@@ -708,22 +726,266 @@ git config --global alias.ci commit
 git config --global alias.unstage 'reset HEAD --'
 git config --global alias.last 'log -1 HEAD'
 git config --global alias.lg 'log --oneline --graph --decorate --all'
+
+# Alias for viewing visual history
 git config --global alias.visual '!gitk'
+
+# More advanced aliases
+git config --global alias.uncommit 'reset --soft HEAD~1'
+git config --global alias.amend 'commit --amend --no-edit'
+git config --global alias.aliases "config --get-regexp '^alias\.'"
 ```
 
-### Global Ignore File
+#### Using Aliases
 
 ```bash
-# Create global gitignore
+# After creating alias.st for status
+git st                    # Same as: git status
+
+# After creating alias.lg for fancy log
+git lg                    # Same as: git log --oneline --graph --decorate --all
+
+# After creating alias.uncommit
+git uncommit             # Same as: git reset --soft HEAD~1
+```
+
+#### External Command Aliases
+
+Use `!` to run external commands (not just Git commands):
+
+```bash
+# Open gitk visual tool
+git config --global alias.visual '!gitk'
+
+# Create a complex alias with shell commands
+git config --global alias.contributors "!git log --format='%aN' | sort -u"
+
+# List all aliases
+git config --global alias.aliases "config --get-regexp '^alias\.'"
+```
+
+#### Viewing and Removing Aliases
+
+```bash
+# List all your aliases
+git config --global --get-regexp alias
+
+# View specific alias
+git config --global alias.st
+
+# Remove an alias
+git config --global --unset alias.st
+```
+
+#### Practical Alias Examples
+
+```bash
+# Quick status
+git config --global alias.s 'status -s'
+
+# Pretty log
+git config --global alias.lg "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+
+# Show branches with last commit
+git config --global alias.branches 'branch -v'
+
+# Undo last commit but keep changes
+git config --global alias.undo 'reset HEAD~1 --mixed'
+
+# List contributors
+git config --global alias.who 'shortlog -sn'
+
+# Show recent branches
+git config --global alias.recent 'branch --sort=-committerdate'
+```
+
+---
+
+### Global Ignore File (.gitignore)
+
+The `.gitignore` file tells Git which files to ignore and not track. A **global gitignore** applies to all repositories on your computer.
+
+**Why use .gitignore?**
+
+* **Keep repositories clean**: Don't commit temporary or generated files
+* **Security**: Prevent accidentally committing sensitive data (passwords, API keys)
+* **Reduce noise**: Hide OS-specific files and IDE configurations
+* **Team collaboration**: Everyone sees only relevant files
+
+**Two types of .gitignore:**
+
+1. **Local .gitignore**: In each repository, affects only that project
+2. **Global .gitignore**: On your system, affects all repositories
+
+#### Creating Global .gitignore
+
+```bash
+# Set up global gitignore file
 git config --global core.excludesfile ~/.gitignore_global
 
-# Add common ignore patterns
+# Create the file if it doesn't exist
+touch ~/.gitignore_global
+```
+
+#### Common Global Ignore Patterns
+
+```bash
+# macOS system files
 echo ".DS_Store" >> ~/.gitignore_global
+echo ".AppleDouble" >> ~/.gitignore_global
+echo ".LSOverride" >> ~/.gitignore_global
+
+# Vim swap files
 echo "*.swp" >> ~/.gitignore_global
 echo "*.swo" >> ~/.gitignore_global
+echo "*~" >> ~/.gitignore_global
+
+# VS Code settings (if you don't want to share)
 echo ".vscode/" >> ~/.gitignore_global
+
+# JetBrains IDEs (IntelliJ, PyCharm, etc.)
+echo ".idea/" >> ~/.gitignore_global
+
+# Node.js
 echo "node_modules/" >> ~/.gitignore_global
+echo "npm-debug.log" >> ~/.gitignore_global
+
+# Python
+echo "__pycache__/" >> ~/.gitignore_global
+echo "*.pyc" >> ~/.gitignore_global
+echo ".pytest_cache/" >> ~/.gitignore_global
+echo "*.egg-info/" >> ~/.gitignore_global
+
+# Environment variables
+echo ".env" >> ~/.gitignore_global
+echo ".env.local" >> ~/.gitignore_global
+
+# OS generated files
+echo "Thumbs.db" >> ~/.gitignore_global
+echo "Desktop.ini" >> ~/.gitignore_global
+
+# Log files
+echo "*.log" >> ~/.gitignore_global
+
+# Temporary files
+echo "*.tmp" >> ~/.gitignore_global
+echo "*.temp" >> ~/.gitignore_global
 ```
+
+#### Local .gitignore (Per Repository)
+
+Create a `.gitignore` file in your repository root:
+
+```bash
+# Create .gitignore in project
+touch .gitignore
+
+# Add project-specific ignores
+echo "config/secrets.yml" >> .gitignore
+echo "build/" >> .gitignore
+echo "dist/" >> .gitignore
+echo "coverage/" >> .gitignore
+```
+
+#### .gitignore Pattern Syntax
+
+```bash
+# Ignore specific file
+filename.txt
+
+# Ignore all files with extension
+*.log
+
+# Ignore directory
+node_modules/
+build/
+
+# Ignore files in specific directory
+logs/*.log
+
+# Ignore files in all subdirectories
+**/temp
+
+# Negative pattern (don't ignore)
+!important.log
+
+# Ignore files only in root
+/config.json
+
+# Comments
+# This is a comment
+```
+
+#### Example Complete .gitignore
+
+```gitignore
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+*.exe
+*.dll
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary
+*.tmp
+*.swp
+*~
+```
+
+#### Checking What's Ignored
+
+```bash
+# Check if file is ignored
+git check-ignore -v filename.txt
+
+# List all ignored files
+git status --ignored
+
+# See which .gitignore rule is ignoring a file
+git check-ignore -v path/to/file
+```
+
+#### Untrack Already Committed Files
+
+If you added `.gitignore` after committing files:
+
+```bash
+# Remove from Git but keep locally
+git rm --cached filename.txt
+
+# Remove entire directory
+git rm -r --cached directory/
+
+# Then commit
+git commit -m "Remove ignored files from tracking"
+```
+
+**💡 Best Practice:** Create your global `.gitignore` when first setting up Git, and add project-specific patterns to each repository's local `.gitignore`.
 
 ---
 
