@@ -114,7 +114,7 @@ git config --local setting.name "value"
 
 ## 📂 Creating Repositories
 
-Important Note: Always before initialization of a new repository make sure the repo is not initialized before by running `git status`
+**⚠️ Important Note:** Always check if a repository is already initialized before creating a new one by running `git status`
 
 ### Initialize a New Repository
 
@@ -182,7 +182,7 @@ git status -b
 
 ```bash
 # Add specific file
-git add filename.txt
+git add <filename.txt>
 
 # Add all files in current directory
 git add .
@@ -190,27 +190,43 @@ git add .
 # Add all changes (including deletions)
 git add -A
 
-# Add all .js files
+# Using wild character to stage all the (e.g.) .js files
 git add *.js
 
-# Add files interactively
+# Add files interactively [by asking you if you want to continue]
 git add -i
+```
 
+The output will be like this:
+
+```bash
+username@user:~/myfolder/$ git add -i
+           staged     unstaged path
+  1:    unchanged        +4/-4 Git.md
+
+*** Commands ***
+  1: status       2: update       3: revert       4: add untracked
+  5: patch        6: diff         7: quit         8: help
+What now> q
+Bye.
+```
+
+```bash
 # Add parts of a file
-git add -p filename.txt
+git add -p <filename.txt>
 ```
 
 ### Removing from Staging
 
 ```bash
 # Unstage specific file
-git reset HEAD filename.txt
+git reset HEAD <filename.txt>
 
 # Unstage all files
 git reset HEAD
 
 # Modern syntax
-git restore --staged filename.txt
+git restore --staged <filename.txt>
 ```
 
 ### Committing Changes
@@ -221,7 +237,11 @@ git commit -m "Your commit message"
 
 # Add and commit in one step (tracked files only)
 git commit -a -m "Message"
+```
 
+> **💡 Tip:** If you use `git commit` without any flags, your default editor will open, allowing you to write a multi-line commit message. The default editor is **VIM**, for which you can find an introduction in the **VIM Editor Reference Guide** page. Alternatively, you can change your default editor to VS Code for convenience, as explained in the configuration section above.
+
+```bash
 # Commit with multi-line message
 git commit
 
