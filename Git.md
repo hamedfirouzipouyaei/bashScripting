@@ -245,7 +245,7 @@ git commit -a -m "Message"
 # Commit with multi-line message
 git commit
 
-# Amend last commit
+# Amend last commit [only for the last commit done by you]
 git commit --amend -m "Updated message"
 
 # Commit with detailed message
@@ -566,7 +566,30 @@ git stash clear
 
 ## 🔄 Rebasing
 
+**⚠️ Important Note:** Rebasing can be dangerous. If you are not confident with Git, do not use **rebasing**.
+
 Rebasing rewrites commit history by moving commits to a new base.
+
+### Why Rebasing Can Be Dangerous
+
+**The Golden Rule: Never rebase commits that have been pushed to a shared repository!**
+
+Rebasing changes commit hashes (rewrites history), which causes problems when:
+
+1. **Collaborators have your commits**: If others have pulled your commits, rebasing creates duplicate commits with different hashes, causing confusion and merge conflicts.
+
+2. **Loss of commit history**: Rebasing can make it difficult to track when changes were actually made, as timestamps change.
+
+3. **Merge conflicts**: If conflicts occur during rebase, you must resolve them for each commit being rebased (potentially many times).
+
+4. **Destructive operation**: Unlike merge, rebase can lose information about when parallel development happened.
+
+**Safe usage:**
+
+* ✅ Rebase your **local** commits before pushing
+* ✅ Rebase your feature branch onto updated main before creating a pull request
+* ❌ **Never** rebase commits that exist on a remote branch others are using
+* ❌ **Never** rebase the main/master branch
 
 ```bash
 # Rebase current branch onto main
