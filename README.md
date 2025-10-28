@@ -745,3 +745,422 @@ find /home -type f -perm -002
 # Find files newer than a reference file
 find /etc -newer /etc/passwd
 ```
+
+---
+
+## 🔬 Comparing Files and Checksums
+
+Linux provides powerful tools for comparing files and verifying file integrity using checksums.
+
+---
+
+## 📊 The `cmp` Command - Binary Comparison
+
+`cmp` compares two files byte by byte. It's useful for binary files and quick comparisons.
+
+### `cmp` Syntax
+
+```bash
+cmp [OPTIONS] file1 file2
+```
+
+### Basic `cmp` Usage
+
+```bash
+# Compare two files
+cmp file1.txt file2.txt
+
+# Silent mode (only exit status)
+cmp -s file1.txt file2.txt
+echo $?    # 0 = identical, 1 = different, 2 = error
+
+# Show all differences
+cmp -l file1.txt file2.txt
+
+# Print differing bytes
+cmp -b file1.txt file2.txt
+```
+
+### Practical `cmp` Examples
+
+```bash
+# Check if two files are identical
+if cmp -s file1 file2; then
+    echo "Files are identical"
+else
+    echo "Files differ"
+fi
+
+# Compare binary files
+cmp image1.jpg image2.jpg
+
+# Find first difference
+cmp file1 file2
+
+# Output example: file1 file2 differ: byte 45, line 3
+```
+
+### `cmp` vs `diff`
+
+* **`cmp`**: Byte-by-byte comparison, stops at first difference, good for binary files
+* **`diff`**: Line-by-line comparison, shows all differences, best for text files
+
+---
+
+## 🔀 The `diff` Command - Text Comparison
+
+`diff` compares files line by line and shows the differences. Essential for code review and version control.
+
+### `diff` Syntax
+
+```bash
+diff [OPTIONS] file1 file2
+```
+
+### Basic `diff` Usage
+
+```bash
+# Basic comparison
+diff file1.txt file2.txt
+
+# Unified format (most readable)
+diff -u file1.txt file2.txt
+
+# Context format (shows surrounding lines)
+diff -c file1.txt file2.txt
+
+# Side-by-side comparison
+diff -y file1.txt file2.txt
+
+# Brief output (only report if files differ)
+diff -q file1.txt file2.txt
+```
+
+### `diff` Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `-u` | Unified format (Git-style) | `diff -u old.txt new.txt` |
+| `-c` | Context format | `diff -c old.txt new.txt` |
+| `-y` | Side-by-side | `diff -y old.txt new.txt` |
+| `-q` | Brief (files differ or not) | `diff -q file1 file2` |
+| `-i` | Ignore case | `diff -i file1 file2` |
+| `-w` | Ignore whitespace | `diff -w file1 file2` |
+| `-b` | Ignore whitespace changes | `diff -b file1 file2` |
+| `-B` | Ignore blank lines | `diff -B file1 file2` |
+| `-r` | Recursive (directories) | `diff -r dir1 dir2` |
+| `-N` | Treat absent files as empty | `diff -rN dir1 dir2` |
+
+### Understanding `diff` Output
+
+#### Normal Format
+
+```bash
+diff file1.txt file2.txt
+# Output:
+# 3c3
+# < This is line 3 in file1
+# ---
+# > This is line 3 in file2
+
+# Explanation:
+# 3c3    = line 3 changed
+# <      = from file1
+# >      = from file2
+# a      = added
+# d      = deleted
+# c      = changed
+```
+
+#### Unified Format (Most Common)
+
+```bash
+diff -u file1.txt file2.txt
+# Output:
+# --- file1.txt
+# +++ file2.txt
+# @@ -1,5 +1,5 @@
+#  Line 1
+#  Line 2
+# -Old line 3
+# +New line 3
+#  Line 4
+
+# Explanation:
+# ---    = original file
+# +++    = modified file
+# @@     = line range
+# -      = removed line
+# +      = added line
+# (space) = unchanged line
+```
+
+### Practical `diff` Examples
+
+```bash
+# Compare configuration files
+diff -u /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
+
+# Compare directories recursively
+diff -r directory1 directory2
+
+# Ignore whitespace differences
+diff -w original.txt modified.txt
+
+# Create a patch file
+diff -u original.c modified.c > changes.patch
+
+# Apply a patch
+patch original.c < changes.patch
+
+# Compare and show only files that differ
+diff -qr dir1 dir2
+
+# Side-by-side with width
+diff -y -W 150 file1.txt file2.txt
+
+# Ignore case differences
+diff -i file1.txt file2.txt
+
+# Compare and highlight differences in color
+diff --color file1.txt file2.txt
+```
+
+### Comparing Directories
+
+```bash
+# Basic directory comparison
+diff -r dir1 dir2
+
+# Show only which files differ
+diff -qr dir1 dir2
+
+# Exclude certain files
+diff -r --exclude="*.log" dir1 dir2
+
+# Exclude multiple patterns
+diff -r --exclude="*.log" --exclude="*.tmp" dir1 dir2
+
+# Compare with new files treated as empty
+diff -rN dir1 dir2
+```
+
+---
+
+## 🔐 The `sha256sum` Command - File Integrity
+
+`sha256sum` generates and verifies SHA-256 cryptographic checksums. Essential for verifying file integrity and detecting changes.
+
+### What is SHA-256?
+
+* **SHA-256**: Secure Hash Algorithm producing a 256-bit (64 character hex) hash
+* **Use cases**: Verify downloads, detect file tampering, ensure data integrity
+* **Property**: Even a tiny change produces a completely different hash
+
+### `sha256sum` Syntax
+
+```bash
+sha256sum [OPTIONS] file
+```
+
+### Basic `sha256sum` Usage
+
+```bash
+# Generate checksum for a file
+sha256sum file.txt
+
+# Generate checksums for multiple files
+sha256sum file1.txt file2.txt file3.txt
+
+# Generate and save checksums to a file
+sha256sum *.txt > checksums.sha256
+
+# Verify checksums from a file
+sha256sum -c checksums.sha256
+
+# Check specific file
+echo "hash_value  filename" | sha256sum -c
+```
+
+### Practical `sha256sum` Examples
+
+```bash
+# Verify downloaded file
+sha256sum ubuntu-22.04.iso
+# Compare output with official checksum from website
+
+# Create checksum file for directory
+sha256sum /backup/*.tar.gz > backup-checksums.txt
+
+# Verify all files
+sha256sum -c backup-checksums.txt
+
+# Verify only, suppress OK messages
+sha256sum -c --quiet checksums.sha256
+
+# Check and show only failures
+sha256sum -c checksums.sha256 2>&1 | grep -v "OK"
+
+# Generate checksum for data from pipe
+echo "Hello World" | sha256sum
+
+# Compare two files using checksums
+if [ "$(sha256sum file1 | awk '{print $1}')" = "$(sha256sum file2 | awk '{print $1}')" ]; then
+    echo "Files are identical"
+else
+    echo "Files differ"
+fi
+```
+
+### Creating and Verifying Checksums
+
+```bash
+# Create checksums for all files in directory
+find /data -type f -exec sha256sum {} \; > all-checksums.txt
+
+# Verify downloads
+# 1. Download file
+wget https://example.com/software.tar.gz
+
+# 2. Download official checksum
+wget https://example.com/software.tar.gz.sha256
+
+# 3. Verify
+sha256sum -c software.tar.gz.sha256
+
+# Create checksums recursively
+find . -type f ! -name "checksums.txt" -exec sha256sum {} \; > checksums.txt
+
+# Verify and show summary
+sha256sum -c checksums.txt | tail -n 1
+```
+
+---
+
+## 🔍 Other Checksum Commands
+
+### `md5sum` - MD5 Checksums
+
+```bash
+# Generate MD5 checksum (128-bit)
+md5sum file.txt
+
+# Verify MD5 checksums
+md5sum -c checksums.md5
+
+# Note: MD5 is faster but less secure than SHA-256
+```
+
+### `sha1sum` - SHA-1 Checksums
+
+```bash
+# Generate SHA-1 checksum (160-bit)
+sha1sum file.txt
+
+# Verify SHA-1 checksums
+sha1sum -c checksums.sha1
+
+# Note: SHA-1 is deprecated for security purposes
+```
+
+### `sha512sum` - SHA-512 Checksums
+
+```bash
+# Generate SHA-512 checksum (512-bit, most secure)
+sha512sum file.txt
+
+# Verify SHA-512 checksums
+sha512sum -c checksums.sha512
+
+# Note: SHA-512 is more secure but slower than SHA-256
+```
+
+### Checksum Comparison
+
+| Algorithm | Bits | Hex Length | Security | Speed | Use Case |
+|-----------|------|------------|----------|-------|----------|
+| MD5 | 128 | 32 | ⚠️ Weak | Fast | Legacy, non-security |
+| SHA-1 | 160 | 40 | ⚠️ Deprecated | Fast | Legacy systems |
+| SHA-256 | 256 | 64 | ✅ Strong | Moderate | Recommended |
+| SHA-512 | 512 | 128 | ✅ Very Strong | Slower | High security |
+
+---
+
+## 🛠️ Practical Comparison Workflows
+
+### Backup Verification
+
+```bash
+# Before backup
+sha256sum /important/data/* > /backup/checksums-before.txt
+
+# After backup
+cd /backup/data
+sha256sum * > checksums-after.txt
+
+# Compare checksums
+diff checksums-before.txt checksums-after.txt
+```
+
+### Configuration Change Detection
+
+```bash
+# Baseline
+sha256sum /etc/*.conf > /var/baseline/config-checksums.txt
+
+# Later, check for changes
+sha256sum /etc/*.conf | diff - /var/baseline/config-checksums.txt
+```
+
+### Find Duplicate Files
+
+```bash
+# Find duplicates by checksum
+find /media -type f -exec sha256sum {} \; | sort | uniq -w64 --all-repeated=separate
+```
+
+### Verify Directory Synchronization
+
+```bash
+# Generate checksums for source
+cd /source
+find . -type f -exec sha256sum {} \; | sort > /tmp/source-checksums.txt
+
+# Generate checksums for destination
+cd /destination
+find . -type f -exec sha256sum {} \; | sort > /tmp/dest-checksums.txt
+
+# Compare
+diff /tmp/source-checksums.txt /tmp/dest-checksums.txt
+```
+
+---
+
+## 📋 Quick Reference Summary
+
+### When to Use Each Tool
+
+* **`cmp`**: Quick binary comparison, check if files are identical
+* **`diff`**: Compare text files, create patches, code review
+* **`sha256sum`**: Verify downloads, detect tampering, ensure integrity
+
+### Common Patterns
+
+```bash
+# Are two files identical?
+cmp -s file1 file2 && echo "Same" || echo "Different"
+
+# What changed between files?
+diff -u original.txt modified.txt
+
+# Verify file wasn't tampered with
+sha256sum -c file.sha256
+
+# Compare directories
+diff -qr dir1 dir2
+
+# Check file integrity after transfer
+sha256sum original.iso > checksum.txt
+# ... transfer file ...
+sha256sum -c checksum.txt
+```

@@ -13,6 +13,8 @@ This guide is divided into two main parts:
 
 ### 📖 What is Git?
 
+Git stands for **Goddamn idiotic truckload of 💩** 😂
+
 Git is a **local version control system** that:
 
 * Tracks changes in files over time
