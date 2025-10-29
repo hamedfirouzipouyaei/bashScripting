@@ -109,6 +109,7 @@ su                 # Become root (root password)
 | `.`    | Current directory     |
 | `..`   | Parent directory      |
 | `~`    | User’s home directory |
+| `/`    | Root directory        |
 
 ### Common Commands
 
@@ -304,6 +305,16 @@ Every Linux command or program we run has **three data streams**:
 1. **STDIN (0)** — Standard Input  
 2. **STDOUT (1)** — Standard Output  
 3. **STDERR (2)** — Standard Error  
+
+`>` is the redirect operator.
+
+```bash
+# The following means:
+# List all files (including hidden ones) in ../../my_folder,
+# combine normal output and error output,
+# and then show only the first 5 lines of that combined result.
+ls -la ../../my_folder 2>&1 | head -5
+```
 
 ### Using Pipes
 
@@ -1661,6 +1672,7 @@ sudo usermod -aG sudo username
 sudo usermod -aG wheel username
 
 # Verify user is in sudo group
+
 groups username
 ```
 
