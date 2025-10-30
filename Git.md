@@ -461,6 +461,22 @@ git tag -d v1.0.0
 git tag -l "v1.*"
 ```
 
+When you pull a repo, you can fetch the desired tags to your local machine.
+
+```bash
+git clone <repository>
+
+# Fetch all the tags [you can also fetch a specifi tag name if you know in advance]
+git fetch --tags
+
+# Check waht are the available tags
+git tag
+
+# Checkout the specific tag in "Detached HEAD" mode
+git checkout <tag_name>
+```
+
+
 ---
 
 ## 🔄 Undoing Changes
