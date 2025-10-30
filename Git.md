@@ -476,7 +476,6 @@ git tag
 git checkout <tag_name>
 ```
 
-
 ---
 
 ## 🔄 Undoing Changes

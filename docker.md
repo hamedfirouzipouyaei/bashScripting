@@ -141,217 +141,6 @@ docker inspect container_id
 docker stats
 ```
 
-### Volume Mounting (Shared Folders) 📁
-
-Volume mounting allows you to **share files and directories** between your host machine and Docker containers. This is essential for:
-
-- **Development**: Edit files on host, see changes in container immediately
-- **Data persistence**: Keep data even when container is deleted
-- **Configuration**: Share config files between host and container
-- **Output**: Get results from container back to host
-
-#### Basic Volume Mounting Syntax
-
-```bash
-# Basic syntax
-docker run -v /host/path:/container/path image_name
-
-# Multiple volumes
-docker run -v /host/path1:/container/path1 -v /host/path2:/container/path2 image_name
-
-# Read-only mount
-docker run -v /host/path:/container/path:ro image_name
-```
-
-#### Advanced Example: Complete Development Environment
-
-Here's a real-world example that demonstrates advanced volume mounting with GPU support, GUI applications, and multiple shared folders:
-
-```bash
-#!/bin/bash
-set -ex
-
-# Clean up any existing container named hfp_dock
-docker rm -f hfp_dock 2>/dev/null || true
-
-# Define the IMAGE you want to run
-IMAGE_NAME="hfp_dock:with-mathlib"
-
-# GPU support (set to "--gpus all" to enable GPU, empty to disable)
-# Note: Requires nvidia-container-toolkit to be installed
-GPU_FLAG="${GPU_FLAG:-}"
-
-# Start the container with RH project mounted for development
-docker run \
-    --rm \
-    -ti \
-    ${GPU_FLAG} \
-    --privileged \
-    --env=DISPLAY=$DISPLAY \
-    --env=XAUTHORITY=/tmp/.Xauthority \
-    --volume=/home/hfp/Docker_Shared_Folder/:/home/hfp/docs \
-    --volume=/home/hfp/Github/RH:/workspace/RH \
-    --volume=$XAUTHORITY:/tmp/.Xauthority:rw \
-    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
-    --name=hfp_dock \
-    --hostname=hfp_dock \
-    --network=host \
-    --add-host=hfp_dock:127.0.1.1 \
-    --workdir=/workspace/RH \
-    "${IMAGE_NAME}" \
-    "$@"
-```
-
-#### Breaking Down the Advanced Example
-
-**Volume Mounts Explained:**
-
-```bash
-# 1. Shared documents folder
---volume=/home/hfp/Docker_Shared_Folder/:/home/hfp/docs
-# Maps: Host folder → Container folder
-#       /home/hfp/Docker_Shared_Folder/ → /home/hfp/docs
-# Purpose: Share documents, files, and data between host and container
-
-# 2. Development project folder
---volume=/home/hfp/Github/RH:/workspace/RH  
-# Maps: Host project → Container workspace
-#       /home/hfp/Github/RH → /workspace/RH
-# Purpose: Edit code on host, compile/run in container
-
-# 3. X11 authorization (for GUI apps)
---volume=$XAUTHORITY:/tmp/.Xauthority:rw
-# Maps: Host X11 auth → Container X11 auth (read-write)
-# Purpose: Allow GUI applications to run from container
-
-# 4. X11 socket (for GUI apps)
---volume=/tmp/.X11-unix:/tmp/.X11-unix
-# Maps: Host X11 socket → Container X11 socket  
-# Purpose: Enable graphical display forwarding
-```
-
-**Other Important Flags:**
-
-```bash
-# Container lifecycle
---rm                    # Remove container when it exits
--ti                     # Interactive terminal
---name=hfp_dock        # Give container a name
---hostname=hfp_dock    # Set container hostname
-
-# Permissions and capabilities
---privileged           # Give extended privileges (use carefully!)
-
-# Environment variables
---env=DISPLAY=$DISPLAY              # Forward display variable
---env=XAUTHORITY=/tmp/.Xauthority   # Set X11 authorization
-
-# Networking
---network=host                      # Use host network
---add-host=hfp_dock:127.0.1.1      # Add custom host entry
-
-# Working directory
---workdir=/workspace/RH             # Set starting directory in container
-
-# GPU support (optional)
-${GPU_FLAG}                         # Add "--gpus all" for GPU access
-```
-
-#### Volume Types and Use Cases
-
-**1. Bind Mounts** (Most Common)
-
-```bash
-# Bind mount - direct path mapping
-docker run -v /home/user/project:/app/project image_name
-```
-
-**2. Named Volumes** (Docker Managed)
-
-```bash
-# Create named volume
-docker volume create my-data
-
-# Use named volume
-docker run -v my-data:/app/data image_name
-
-# List volumes
-docker volume ls
-
-# Remove volume
-docker volume rm my-data
-```
-
-**3. Anonymous Volumes** (Temporary)
-
-```bash
-# Anonymous volume (Docker creates random name)
-docker run -v /app/data image_name
-```
-
-#### Practical Volume Mounting Examples
-
-**Development Workflow:**
-
-```bash
-# Mount current directory for live editing
-docker run -v $(pwd):/workspace -w /workspace gcc:latest g++ main.cpp -o app
-
-# Mount home directory for access to all files
-docker run -v $HOME:/home/user ubuntu:22.04
-```
-
-**Data Processing:**
-
-```bash
-# Input and output folders
-docker run \
-    -v /host/input:/app/input:ro \
-    -v /host/output:/app/output \
-    data-processor:latest
-```
-
-**Configuration Sharing:**
-
-```bash
-# Share configuration files
-docker run \
-    -v /host/config:/app/config:ro \
-    -v /host/logs:/app/logs \
-    web-server:latest
-```
-
-#### 💡 Volume Mounting Best Practices
-
-1. **Use absolute paths**: Always use full paths for reliability
-2. **Read-only when possible**: Add `:ro` for config files you don't want to modify
-3. **Organize your mounts**: Group related volumes together
-4. **Use named volumes for data**: Better for databases and persistent storage
-5. **Be careful with permissions**: Container user might not match host user
-6. **Avoid mounting sensitive directories**: Don't mount `/` or system directories
-
-#### 🚨 Common Volume Mounting Issues
-
-**Permission Problems:**
-
-```bash
-# Fix permission issues by matching user IDs
-docker run -u $(id -u):$(id -g) -v $(pwd):/workspace image_name
-
-# Or set proper ownership after
-sudo chown -R $USER:$USER /host/mounted/folder
-```
-
-**Path Issues:**
-
-```bash
-# ❌ Wrong: relative paths can be unreliable
-docker run -v ./code:/app/code image_name
-
-# ✅ Correct: use absolute paths
-docker run -v $(pwd)/code:/app/code image_name
-```
-
 ---
 
 ## Creating a Dockerfile 📝
@@ -586,6 +375,217 @@ fi
 ```
 
 ---
+
+### Volume Mounting (Shared Folders) 📁
+
+Volume mounting allows you to **share files and directories** between your host machine and Docker containers. This is essential for:
+
+- **Development**: Edit files on host, see changes in container immediately
+- **Data persistence**: Keep data even when container is deleted
+- **Configuration**: Share config files between host and container
+- **Output**: Get results from container back to host
+
+#### Basic Volume Mounting Syntax
+
+```bash
+# Basic syntax
+docker run -v /host/path:/container/path image_name
+
+# Multiple volumes
+docker run -v /host/path1:/container/path1 -v /host/path2:/container/path2 image_name
+
+# Read-only mount
+docker run -v /host/path:/container/path:ro image_name
+```
+
+#### Advanced Example: Complete Development Environment
+
+Here's a real-world example that demonstrates advanced volume mounting with GPU support, GUI applications, and multiple shared folders:
+
+```bash
+#!/bin/bash
+set -ex
+
+# Clean up any existing container named hfp_dock
+docker rm -f hfp_dock 2>/dev/null || true
+
+# Define the IMAGE you want to run
+IMAGE_NAME="hfp_dock:with-mathlib"
+
+# GPU support (set to "--gpus all" to enable GPU, empty to disable)
+# Note: Requires nvidia-container-toolkit to be installed
+GPU_FLAG="${GPU_FLAG:-}"
+
+# Start the container with RH project mounted for development
+docker run \
+    --rm \
+    -ti \
+    ${GPU_FLAG} \
+    --privileged \
+    --env=DISPLAY=$DISPLAY \
+    --env=XAUTHORITY=/tmp/.Xauthority \
+    --volume=/home/hfp/Docker_Shared_Folder/:/home/hfp/docs \
+    --volume=/home/hfp/Github/RH:/workspace/RH \
+    --volume=$XAUTHORITY:/tmp/.Xauthority:rw \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --name=hfp_dock \
+    --hostname=hfp_dock \
+    --network=host \
+    --add-host=hfp_dock:127.0.1.1 \
+    --workdir=/workspace/RH \
+    "${IMAGE_NAME}" \
+    "$@"
+```
+
+#### Breaking Down the Advanced Example
+
+**Volume Mounts Explained:**
+
+```bash
+# 1. Shared documents folder
+--volume=/home/hfp/Docker_Shared_Folder/:/home/hfp/docs
+# Maps: Host folder → Container folder
+#       /home/hfp/Docker_Shared_Folder/ → /home/hfp/docs
+# Purpose: Share documents, files, and data between host and container
+
+# 2. Development project folder
+--volume=/home/hfp/Github/RH:/workspace/RH  
+# Maps: Host project → Container workspace
+#       /home/hfp/Github/RH → /workspace/RH
+# Purpose: Edit code on host, compile/run in container
+
+# 3. X11 authorization (for GUI apps)
+--volume=$XAUTHORITY:/tmp/.Xauthority:rw
+# Maps: Host X11 auth → Container X11 auth (read-write)
+# Purpose: Allow GUI applications to run from container
+
+# 4. X11 socket (for GUI apps)
+--volume=/tmp/.X11-unix:/tmp/.X11-unix
+# Maps: Host X11 socket → Container X11 socket  
+# Purpose: Enable graphical display forwarding
+```
+
+**Other Important Flags:**
+
+```bash
+# Container lifecycle
+--rm                    # Remove container when it exits
+-ti                     # Interactive terminal
+--name=hfp_dock        # Give container a name
+--hostname=hfp_dock    # Set container hostname
+
+# Permissions and capabilities
+--privileged           # Give extended privileges (use carefully!)
+
+# Environment variables
+--env=DISPLAY=$DISPLAY              # Forward display variable
+--env=XAUTHORITY=/tmp/.Xauthority   # Set X11 authorization
+
+# Networking
+--network=host                      # Use host network
+--add-host=hfp_dock:127.0.1.1      # Add custom host entry
+
+# Working directory
+--workdir=/workspace/RH             # Set starting directory in container
+
+# GPU support (optional)
+${GPU_FLAG}                         # Add "--gpus all" for GPU access
+```
+
+#### Volume Types and Use Cases
+
+**1. Bind Mounts** (Most Common)
+
+```bash
+# Bind mount - direct path mapping
+docker run -v /home/user/project:/app/project image_name
+```
+
+**2. Named Volumes** (Docker Managed)
+
+```bash
+# Create named volume
+docker volume create my-data
+
+# Use named volume
+docker run -v my-data:/app/data image_name
+
+# List volumes
+docker volume ls
+
+# Remove volume
+docker volume rm my-data
+```
+
+**3. Anonymous Volumes** (Temporary)
+
+```bash
+# Anonymous volume (Docker creates random name)
+docker run -v /app/data image_name
+```
+
+#### Practical Volume Mounting Examples
+
+**Development Workflow:**
+
+```bash
+# Mount current directory for live editing
+docker run -v $(pwd):/workspace -w /workspace gcc:latest g++ main.cpp -o app
+
+# Mount home directory for access to all files
+docker run -v $HOME:/home/user ubuntu:22.04
+```
+
+**Data Processing:**
+
+```bash
+# Input and output folders
+docker run \
+    -v /host/input:/app/input:ro \
+    -v /host/output:/app/output \
+    data-processor:latest
+```
+
+**Configuration Sharing:**
+
+```bash
+# Share configuration files
+docker run \
+    -v /host/config:/app/config:ro \
+    -v /host/logs:/app/logs \
+    web-server:latest
+```
+
+#### 💡 Volume Mounting Best Practices
+
+1. **Use absolute paths**: Always use full paths for reliability
+2. **Read-only when possible**: Add `:ro` for config files you don't want to modify
+3. **Organize your mounts**: Group related volumes together
+4. **Use named volumes for data**: Better for databases and persistent storage
+5. **Be careful with permissions**: Container user might not match host user
+6. **Avoid mounting sensitive directories**: Don't mount `/` or system directories
+
+#### 🚨 Common Volume Mounting Issues
+
+**Permission Problems:**
+
+```bash
+# Fix permission issues by matching user IDs
+docker run -u $(id -u):$(id -g) -v $(pwd):/workspace image_name
+
+# Or set proper ownership after
+sudo chown -R $USER:$USER /host/mounted/folder
+```
+
+**Path Issues:**
+
+```bash
+# ❌ Wrong: relative paths can be unreliable
+docker run -v ./code:/app/code image_name
+
+# ✅ Correct: use absolute paths
+docker run -v $(pwd)/code:/app/code image_name
+```
 
 ## Using Docker as Compiler in VS Code 💻
 
