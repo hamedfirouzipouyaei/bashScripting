@@ -1158,6 +1158,44 @@ git remote rename origin upstream
 git remote show origin
 ```
 
+### 🔄 Getting Latest Updates from Remote
+
+If you want to get the latest updates from the cloud (GitHub, GitLab, Bitbucket, etc.), you need to run:
+
+```bash
+# Prune remote references (remove outdated remote-tracking branches)
+git remote prune origin
+# or
+git remote -p
+```
+
+**⚠️ Important Authentication Note:**
+
+Check your remote URL first:
+
+```bash
+git remote -v
+```
+
+If the result shows URLs starting with `https://...` for both fetch and push, it means you are using HTTPS and not SSH keys. In such cases, you need to provide username and password/token to perform commands, or switch to SSH authentication.
+
+**To switch from HTTPS to SSH:**
+
+```bash
+# Example: Change from HTTPS to SSH
+git remote set-url origin git@github.com:username/repo.git
+
+# For your specific example:
+git remote set-url origin git@github.com:imecsafebot/RH.git
+```
+
+**Benefits of SSH over HTTPS:**
+
+* No need to enter credentials repeatedly
+* More secure authentication
+* Works seamlessly with automated scripts
+* No need to manage personal access tokens
+
 ### Pushing to GitHub
 
 ```bash
