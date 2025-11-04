@@ -497,6 +497,64 @@ more code
 
 ---
 
+### Error 16: MD033 - Inline HTML
+
+**Error:** Inline HTML [Element: html_element_name]
+
+**Problem:**
+
+```markdown
+This is a paragraph with <span style="color: red;">red text</span>.  ❌ Using HTML
+
+<div class="custom-class">
+  Some content in a div
+</div>  ❌ HTML block elements
+```
+
+**Solution:**
+
+```markdown
+This is a paragraph with **emphasized text**.  ✅ Using Markdown
+
+Use Markdown syntax whenever possible. If HTML is absolutely necessary,
+consider if your Markdown processor supports it, or restructure your content.
+```
+
+**When HTML might be necessary:**
+
+* Complex styling not supported by Markdown
+* Embedding iframes or videos
+* Custom class attributes for styling
+* Special formatting requirements
+
+**How to handle it:**
+
+1. **Best approach:** Use pure Markdown whenever possible
+2. **If HTML is required:** Add MD033 to your `.markdownlint.json` exceptions:
+
+   ```json
+   {
+     "MD033": false
+   }
+   ```
+
+3. **Alternative:** Use Markdown extensions or your platform's special syntax (like GitHub's `<details>` tag)
+
+**Example of acceptable HTML usage:**
+
+```markdown
+<details>
+<summary>Click to expand</summary>
+
+Hidden content here that can be toggled.
+
+</details>
+```
+
+**Why it matters:** Markdown is meant to be portable and simple. HTML reduces portability and can break rendering on some platforms. However, some platforms (like GitHub) support certain HTML elements intentionally.
+
+---
+
 ## Quick Fix Commands 🚀
 
 ### Using markdownlint-cli
