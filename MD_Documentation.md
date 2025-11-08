@@ -1,4 +1,4 @@
-# 📝 Markdown Documentation Guide
+# 📚 Markdown Documentation Guide
 
 ## What is Markdown? 🤔
 

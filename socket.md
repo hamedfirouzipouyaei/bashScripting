@@ -1,4 +1,4 @@
-# Socket Programming Reference
+# 🔌 Socket Programming Reference
 
 ## Explanation
 
@@ -38,9 +38,9 @@
 - **Security**: validate all incoming data, consider TLS for confidentiality/integrity, harden against SYN floods (use backlog tuning, SYN cookies), and avoid exposing unnecessary ports.
 - **Diagnostics**: tools like `netstat`, `ss`, `lsof`, `tcpdump`, and `Wireshark` are invaluable for observing socket states and traffic during debugging.
 
-## Code
+## </> Code
 
-### A. Windows Examples (Winsock2)
+### A. 🪟 Windows Examples (Winsock2)
 
 > All Windows samples assume the program links against `Ws2_32.lib` and calls `WSAStartup` before using sockets. Error handling is trimmed for clarity; add production-grade checks in real projects.
 
@@ -333,13 +333,13 @@ void run_udp_client(const char *host, const char *port) {
 }
 ```
 
-### B. Linux Examples (POSIX/BSD Sockets)
+### B. 🐧 Linux Examples (POSIX/BSD Sockets)
 
 > All Linux samples require `#include <sys/types.h>`, `<sys/socket.h>`, `<netinet/in.h>`, `<arpa/inet.h>`, `<unistd.h>`, and `<fcntl.h>` as needed. Compile with `gcc server.c -o server`.
 
 #### B-1. TCP Single-Client Server
 
-```c
+```cpp
 int create_listen_socket(uint16_t port) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -396,7 +396,7 @@ void run_single_server(uint16_t port) {
 
 #### B-2. TCP Multi-Client Server with `select`
 
-```c
+```cpp
 static void set_nonblocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
@@ -457,7 +457,7 @@ void run_select_server(uint16_t port) {
 
 #### B-3. UDP Server and Client
 
-```c
+```cpp
 void run_udp_server(uint16_t port) {
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     struct sockaddr_in addr = {0};
