@@ -30,6 +30,9 @@ ls -la install_manifest.txt
 
 # Remove all installed files
 xargs -a install_manifest.txt -d '\n' sudo rm -vf
+
+# From inside a docker
+xargs -a install_manifest.txt -d '\n' rm -vf
 ```
 
 **⚠️ Warning:** This command will permanently delete files from your system. Make sure you're in the correct build directory and that the `install_manifest.txt` file corresponds to the library you want to uninstall.
