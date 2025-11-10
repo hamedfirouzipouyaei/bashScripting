@@ -44,9 +44,49 @@ on:
   workflow_dispatch:  # Manual trigger
 ```
 
-### 📊 [SLIDE PLACEHOLDER: Workflow Lifecycle Diagram]
+### 📊 Workflow Lifecycle Diagram
 
-_Include: Flow from trigger → jobs → steps → actions_
+```mermaid
+graph TD
+    A[GitHub Event Trigger] -->|push, pull_request, etc.| B[Workflow Started]
+    B --> C{Jobs}
+    
+    C --> D[Job 1: Build]
+    C --> E[Job 2: Test]
+    C --> F[Job 3: Deploy]
+    
+    D --> D1[Step 1: Checkout Code]
+    D1 --> D2[Step 2: Setup Environment]
+    D2 --> D3[Step 3: Install Dependencies]
+    D3 --> D4[Step 4: Build Application]
+    
+    E --> E1[Step 1: Checkout Code]
+    E1 --> E2[Step 2: Run Tests]
+    E2 --> E3[Step 3: Upload Coverage]
+    
+    D4 -->|needs: build| F
+    E3 -->|needs: test| F
+    
+    F --> F1[Step 1: Deploy to Server]
+    F1 --> F2[Step 2: Run Health Check]
+    
+    F2 --> G[Workflow Complete]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:2px
+    style B fill:#fff5b1,stroke:#ffd700,stroke-width:2px
+    style G fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style D fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+    style F fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+```
+
+**Workflow Execution Flow:**
+
+1. **Trigger** → Event occurs (push, PR, schedule, manual)
+2. **Workflow** → YAML file defines the automation
+3. **Jobs** → Execute in parallel (unless dependencies defined)
+4. **Steps** → Run sequentially within each job
+5. **Actions** → Reusable code units within steps
 
 ---
 
@@ -516,26 +556,368 @@ jobs:
 ## Detailed Explanation of Each Section
 
 ### 1. **Workflow Name**
+
 ```yaml
 name: CI/CD Pipeline
 ```
+
 - Identifies the workflow in the GitHub Actions UI
 - Optional but recommended for clarity
 
 ---
 
 ### 2. **Triggers (`on`)**
+
 ```yaml
 on:
   push:
     branches: [main]
 ```
+
 - **`push`**: Triggers on code push to specified branches
 - **`pull_request`**: Triggers when PR is opened/updated
 - **`schedule`**: Runs on a schedule (cron syntax)
 - **`workflow_dispatch`**: Manual trigger from UI
 - **`paths`**: Filter by changed files
 - **Event types**: `release`, `issues`, `issue_comment`, etc.
+
+---
+
+## GitHub Events Deep Dive
+
+GitHub Actions workflows are triggered by **events** that occur in your repository. Understanding event activity types and filters is crucial for creating efficient, targeted workflows.
+
+### Event Activity Types
+
+Each event can have multiple **activity types** that specify **-when exactly-** the workflow should run. By default, workflows trigger on all activity types for an event, but you can filter to specific ones.
+
+#### Common Events and Their Activity Types
+
+**1. `pull_request` and `pull_request_target`**
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+```
+
+**Available activity types:**
+
+- `opened` - PR is created
+- `synchronize` - New commits pushed to the PR branch
+- `reopened` - Previously closed PR is reopened
+- `closed` - PR is closed (merged or not)
+- `assigned` / `unassigned` - Assignee added/removed
+- `labeled` / `unlabeled` - Label added/removed
+- `review_requested` / `review_request_removed` - Reviewer requested/removed
+- `ready_for_review` - Draft PR marked as ready
+- `converted_to_draft` - PR converted to draft
+- `auto_merge_enabled` / `auto_merge_disabled` - Auto-merge toggled
+- `locked` / `unlocked` - Conversation locked/unlocked
+- `edited` - PR title or body edited
+
+**Common use cases:**
+
+```yaml
+# Run tests only when PR is opened or updated with new commits
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Run deployment cleanup when PR is closed
+on:
+  pull_request:
+    types: [closed]
+
+# Auto-label PR when it's ready for review
+on:
+  pull_request:
+    types: [ready_for_review]
+```
+
+---
+
+**2. `issues`**
+
+```yaml
+on:
+  issues:
+    types: [opened, edited, deleted, closed, reopened]
+```
+
+**Available activity types:**
+
+- `opened` - New issue created
+- `edited` - Issue title/body edited
+- `deleted` - Issue deleted
+- `closed` - Issue closed
+- `reopened` - Closed issue reopened
+- `assigned` / `unassigned` - Assignee changed
+- `labeled` / `unlabeled` - Label changed
+- `locked` / `unlocked` - Issue locked/unlocked
+- `transferred` - Issue transferred to another repo
+- `pinned` / `unpinned` - Issue pinned/unpinned
+- `milestoned` / `demilestoned` - Milestone added/removed
+
+**Example:**
+
+```yaml
+# Auto-assign issues based on labels
+on:
+  issues:
+    types: [labeled]
+```
+
+---
+
+**3. `release`**
+
+```yaml
+on:
+  release:
+    types: [published, created, edited, deleted]
+```
+
+**Available activity types:**
+
+- `published` - Release published (not draft, not pre-release)
+- `unpublished` - Release converted to draft
+- `created` - Draft release created
+- `edited` - Release details edited
+- `deleted` - Release deleted
+- `prereleased` - Pre-release published
+- `released` - Release or pre-release published
+
+**Example:**
+
+```yaml
+# Deploy only on official releases (not pre-releases)
+on:
+  release:
+    types: [published]
+```
+
+---
+
+**4. `issue_comment`**
+
+```yaml
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+```
+
+**Note:** Triggers on comments in both issues AND pull requests.
+
+---
+
+**5. `push` and `create`/`delete`**
+
+```yaml
+on:
+  push:
+    # push has no activity types, use branches/tags filters
+```
+
+The `push` event doesn't have activity types, but you can use `create` and `delete` events for branch/tag creation/deletion:
+
+```yaml
+on:
+  create:  # Branch or tag created
+  delete:  # Branch or tag deleted
+```
+
+---
+
+**6. `workflow_run`**
+
+```yaml
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed, requested, in_progress]
+```
+
+Trigger when another workflow runs. Useful for sequential workflows.
+
+---
+
+### Event Filters
+
+Filters allow you to narrow down when a workflow runs based on specific criteria like branches, tags, file paths, or activity types.
+
+#### 1. **Branch and Tag Filters**
+
+**Branch filtering:**
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'releases/**'  # Pattern matching
+      - '!releases/**-beta'  # Exclude pattern
+    branches-ignore:
+      - 'experimental/**'
+```
+
+**Tag filtering:**
+
+```yaml
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Semantic versioning tags
+      - '!v*-alpha'  # Exclude alpha versions
+    tags-ignore:
+      - 'test-*'
+```
+
+**Pattern matching:**
+
+- `*` - Matches any character except `/`
+- `**` - Matches any character including `/`
+- `?` - Matches single character
+- `!` - Negates the pattern (must come first)
+
+---
+
+#### 2. **Path Filters**
+
+Trigger only when specific files change:
+
+```yaml
+on:
+  push:
+    paths:
+      - 'src/**'           # Any file in src/
+      - 'package.json'      # Specific file
+      - '**.js'             # All JS files
+      - 'docs/**/*.md'      # Markdown in docs
+      - '!docs/draft/**'    # Exclude drafts
+    paths-ignore:
+      - '**.md'             # Ignore markdown files
+      - 'docs/**'           # Ignore docs folder
+```
+
+**Important notes:**
+
+- Cannot use both `paths` and `paths-ignore` in the same event
+- Path filters check only changed files, not all files
+- Paths are relative to repository root
+- At least one path must match for the workflow to run
+
+---
+
+#### 3. **Combining Activity Types and Filters**
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+```
+
+This runs only when:
+
+- ✅ PR is opened OR new commits are pushed
+- ✅ AND PR targets `main` or `release/**` branches
+- ✅ AND changes include files in `src/`, `tests/`, or `package.json`
+
+---
+
+#### 4. **Advanced Filter Patterns**
+
+**Multiple events with different filters:**
+
+```yaml
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+  
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+    paths:
+      - 'src/**'
+  
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly full build
+```
+
+**Conditional execution within workflow:**
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, labeled]
+
+jobs:
+  deploy-preview:
+    if: github.event.action == 'labeled' && github.event.label.name == 'deploy-preview'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying preview environment"
+```
+
+---
+
+### Event Filter Best Practices
+
+1. **Be specific with paths** - Avoid running unnecessary workflows
+  
+   ```yaml
+   paths:
+     - 'backend/**'  # Don't trigger backend tests for frontend changes
+   ```
+
+2. **Use activity types wisely** - Select only needed types
+  
+   ```yaml
+   types: [opened, synchronize]  # Skip labeled, assigned, etc.
+   ```
+
+3. **Combine filters for precision** - Use multiple filters together
+  
+   ```yaml
+   pull_request:
+     types: [opened, synchronize]
+     branches: [main]
+     paths: ['src/**']
+   ```
+
+4. **Consider `paths-ignore` for docs** - Skip CI for documentation changes
+  
+   ```yaml
+   paths-ignore:
+     - '**.md'
+     - 'docs/**'
+   ```
+
+5. **Test complex patterns** - Verify filter patterns work as expected
+
+---
+
+### Quick Reference Table
+
+| Event | Common Activity Types | Typical Filters |
+|-------|----------------------|-----------------|
+| `push` | N/A | `branches`, `tags`, `paths` |
+| `pull_request` | `opened`, `synchronize`, `closed` | `branches`, `paths`, `types` |
+| `issues` | `opened`, `labeled`, `closed` | `types` |
+| `release` | `published`, `created` | `types` |
+| `schedule` | N/A | `cron` expression |
+| `workflow_dispatch` | N/A | Input parameters |
+| `issue_comment` | `created`, `edited` | `types` |
 
 ---
 
