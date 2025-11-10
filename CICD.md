@@ -290,9 +290,120 @@ steps:
     run: npm test
 ```
 
-### 📊 [SLIDE PLACEHOLDER: Step Execution Flow]
+### 📊 Step Execution Flow
 
-_Include: Sequential execution of steps within a job_
+#### **Sequential execution of steps within a job**
+
+```mermaid
+graph TB
+    A[Job Starts] --> B[Step 1: Checkout Code]
+    B --> C[Step 2: Setup Environment]
+    C --> D[Step 3: Install Dependencies]
+    D --> E[Step 4: Run Linter]
+    E --> F[Step 5: Run Tests]
+    F --> G[Step 6: Build Application]
+    G --> H[Step 7: Upload Artifacts]
+    H --> I[Job Complete]
+    
+    B -.if fails.-> X[Job Failed]
+    C -.if fails.-> X
+    D -.if fails.-> X
+    E -.if fails.-> X
+    F -.if fails.-> X
+    G -.if fails.-> X
+    H -.if fails.-> X
+    
+    style A fill:#fff5b1,stroke:#ffd700,stroke-width:2px
+    style I fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style X fill:#f8d7da,stroke:#dc3545,stroke-width:2px
+    style B fill:#e7f3ff,stroke:#0366d6
+    style C fill:#e7f3ff,stroke:#0366d6
+    style D fill:#e7f3ff,stroke:#0366d6
+    style E fill:#e7f3ff,stroke:#0366d6
+    style F fill:#e7f3ff,stroke:#0366d6
+    style G fill:#e7f3ff,stroke:#0366d6
+    style H fill:#e7f3ff,stroke:#0366d6
+```
+
+**Visual Representation:**
+
+```yaml
+┌─────────────────────────────────────────────────────────────┐
+│              SEQUENTIAL STEP EXECUTION                      │
+│                    (Within a Job)                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Job Starts                                                 │
+│      │                                                      │
+│      ▼                                                      │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 1: Checkout Code           │  uses: checkout@v4     │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 2: Setup Node.js           │  uses: setup-node@v4   │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 3: Install Dependencies    │  run: npm ci           │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 4: Run Linter              │  run: npm run lint     │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 5: Run Tests               │  run: npm test         │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 6: Build Application       │  run: npm run build    │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  ┌─────────────────────────────────┐                        │
+│  │ Step 7: Upload Artifacts        │  uses: upload@v4       │
+│  └────────────┬────────────────────┘                        │
+│               │  ✅ Success                                 │
+│               ▼                                             │
+│  Job Complete ✅                                            │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│  ⚠️  If ANY step fails:                                     │
+│      • Remaining steps are SKIPPED                          │
+│      • Job marked as FAILED ❌                              │
+│      • Use continue-on-error: true to bypass                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+
+- **Sequential**: Steps run one after another, top to bottom
+- **Same Runner**: All steps execute on the same machine
+- **Shared Context**: Environment variables and files persist between steps
+- **Fail Fast**: By default, if a step fails, subsequent steps are skipped
+- **Exit Codes**: Non-zero exit code = failure (unless `continue-on-error: true`)
+
+**Example with Error Handling:**
+
+```yaml
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
+  
+  - name: Run tests
+    run: npm test
+    continue-on-error: true  # Job continues even if tests fail
+  
+  - name: Upload test results
+    if: always()  # Runs even if previous step failed
+    uses: actions/upload-artifact@v4
+```
 
 ---
 
@@ -332,9 +443,131 @@ jobs:
     runs-on: ubuntu-latest  # GitHub-hosted runner
 ```
 
-### 📊 [SLIDE PLACEHOLDER: GitHub-Hosted Runner Infrastructure]
+### 📊 GitHub-Hosted Runner Infrastructure
 
-_Include: Diagram showing GitHub's cloud infrastructure_
+#### **GitHub's Cloud Infrastructure**
+
+```mermaid
+graph TB
+    subgraph "GitHub Cloud"
+        A[Your Workflow Trigger] --> B[GitHub Actions Service]
+        B --> C{Runner Queue}
+        
+        C --> D1[Ubuntu Runner Pool]
+        C --> E1[Windows Runner Pool]
+        C --> F1[macOS Runner Pool]
+        
+        D1 --> D2[Runner 1]
+        D1 --> D3[Runner 2]
+        D1 --> D4[Runner N...]
+        
+        E1 --> E2[Runner 1]
+        E1 --> E3[Runner 2]
+        
+        F1 --> F2[Runner 1]
+        F1 --> F3[Runner 2]
+    end
+    
+    D2 --> G[Execute Job]
+    E2 --> G
+    F2 --> G
+    
+    G --> H[Return Results]
+    H --> B
+    B --> I[Display in GitHub UI]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:2px
+    style B fill:#fff5b1,stroke:#ffd700,stroke-width:2px
+    style D1 fill:#f0e6ff,stroke:#6f42c1
+    style E1 fill:#e6f7ff,stroke:#1890ff
+    style F1 fill:#f5f5f5,stroke:#8c8c8c
+    style G fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style I fill:#d4edda,stroke:#28a745,stroke-width:2px
+```
+
+**Visual Representation:**
+
+```yaml
+┌─────────────────────────────────────────────────────────────────────┐
+│                   GITHUB-HOSTED RUNNER ARCHITECTURE                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Developer                                                          │
+│      │                                                              │
+│      │ git push / PR / manual trigger                               │
+│      ▼                                                              │
+│  ┌──────────────────────────────────────┐                           │
+│  │      GitHub Actions Service          │                           │
+│  │  (Workflow orchestration & queue)    │                           │
+│  └──────────┬───────────────────────────┘                           │
+│             │                                                       │
+│             │ Assigns job to available runner                       │
+│             │                                                       │
+│    ┌────────┴────────┬──────────────┬──────────────┐                │
+│    ▼                 ▼              ▼              ▼                │
+│ ┌─────────┐    ┌──────────┐   ┌──────────┐   ┌─────────┐            │
+│ │ Ubuntu  │    │ Windows  │   │  macOS   │   │  More   │            │
+│ │ Runner  │    │  Runner  │   │  Runner  │   │ Runners │            │
+│ │  Pool   │    │   Pool   │   │   Pool   │   │  ...    │            │
+│ └────┬────┘    └─────┬────┘   └─────┬────┘   └─────────┘            │
+│      │               │              │                               │
+│   [VM Pool]       [VM Pool]     [VM Pool]                           │
+│      │               │              │                               │
+│      ▼               ▼              ▼                               │
+│ ┌─────────────────────────────────────────┐                         │
+│ │  Fresh Virtual Machine Provisioned      │                         │
+│ │  • Pre-installed tools & dependencies   │                         │
+│ │  • Clean environment (no state)         │                         │
+│ │  • Network access (internet only)       │                         │
+│ │  • Executes your workflow steps         │                         │
+│ └──────────────────┬──────────────────────┘                         │
+│                    │                                                │
+│                    │ Job completes                                  │
+│                    ▼                                                │
+│             ┌──────────────┐                                        │
+│             │  Logs & Data │                                        │
+│             │ Sent to GitHub│                                       │
+│             └──────┬───────┘                                        │
+│                    │                                                │
+│                    ▼                                                │
+│             VM Destroyed 🗑️                                         │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│  Characteristics:                                                   │
+│  ✅ Managed by GitHub (no maintenance)                              │
+│  ✅ Multiple OS options (Ubuntu, Windows, macOS)                    │
+│  ✅ Pre-installed software & tools                                  │
+│  ✅ Clean environment for each job                                  │
+│  ✅ Auto-scaling based on demand                                    │
+│  ⚠️  Public internet access only                                    │
+│  ⚠️  No persistent storage between runs                             │
+│  ⚠️  Usage limits based on plan                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**How It Works:**
+
+1. **Workflow Triggered** → Event occurs (push, PR, schedule)
+2. **Job Queued** → GitHub Actions service receives the job
+3. **Runner Selected** → Available runner from the appropriate pool (OS-specific)
+4. **VM Provisioned** → Fresh virtual machine spins up with pre-installed tools
+5. **Job Executed** → Your workflow steps run in the clean environment
+6. **Results Returned** → Logs and artifacts sent back to GitHub
+7. **VM Destroyed** → Machine is deleted (no state persists)
+
+**Pre-installed Software:**
+
+Each runner comes with common tools:
+
+- **Ubuntu**: Node.js, Python, Ruby, Java, Docker, Git, npm, etc.
+- **Windows**: PowerShell, Chocolatey, Node.js, Python, .NET, Visual Studio
+- **macOS**: Xcode, Homebrew, Node.js, Python, Ruby, CocoaPods
+
+**Network Access:**
+
+- ✅ Public internet (GitHub, npm, PyPI, Docker Hub, etc.)
+- ❌ Private networks (internal databases, corporate resources)
+- ❌ Localhost services from your development machine
 
 ---
 
@@ -1191,15 +1424,385 @@ strategy:
 7. **Keep workflows DRY**: Use reusable workflows and composite actions
 8. **Monitor usage**: Check action minutes and storage
 
-### 📊 [SLIDE PLACEHOLDER: Best Practices Checklist]
-_Include: Visual checklist of workflow optimization tips_
+### 📊 Best Practices Checklist
+
+#### **Workflow Optimization Tips**
+
+```mermaid
+graph TD
+    A[GitHub Actions Best Practices] --> B[Security]
+    A --> C[Performance]
+    A --> D[Maintainability]
+    A --> E[Cost Optimization]
+    
+    B --> B1[✓ Use specific action versions]
+    B --> B2[✓ Secure secrets properly]
+    B --> B3[✓ Limit permissions GITHUB_TOKEN]
+    B --> B4[✓ Pin dependencies]
+    
+    C --> C1[✓ Cache dependencies]
+    C --> C2[✓ Parallelize jobs]
+    C --> C3[✓ Use matrix strategy]
+    C --> C4[✓ Optimize Docker layers]
+    
+    D --> D1[✓ Use reusable workflows]
+    D --> D2[✓ Document workflows]
+    D --> D3[✓ Keep workflows DRY]
+    D --> D4[✓ Use composite actions]
+    
+    E --> E1[✓ Path filters to skip builds]
+    E --> E2[✓ Cancel redundant runs]
+    E --> E3[✓ Use self-hosted for heavy]
+    E --> E4[✓ Set job timeouts]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+**Best Practices Checklist:**
+
+#### 🔒 Security
+
+```yaml
+# ✅ DO: Use specific versions
+- uses: actions/checkout@v4
+
+# ❌ DON'T: Use branches (can change)
+- uses: actions/checkout@main
+
+# ✅ DO: Limit permissions
+permissions:
+  contents: read
+  pull-requests: write
+
+# ✅ DO: Use secrets for credentials
+env:
+  API_KEY: ${{ secrets.API_KEY }}
+
+# ❌ DON'T: Hardcode credentials
+env:
+  API_KEY: "abc123xyz"
+```
+
+#### ⚡ Performance
+
+```yaml
+# ✅ Cache dependencies
+- uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+# ✅ Parallelize independent jobs
+jobs:
+  test:
+    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-latest  # Runs in parallel with test
+
+# ✅ Use matrix for multiple versions
+strategy:
+  matrix:
+    node: [16, 18, 20]
+    os: [ubuntu-latest, windows-latest]
+
+# ✅ Fail fast for quick feedback
+strategy:
+  fail-fast: true
+```
+
+#### 🛠️ Maintainability
+
+```yaml
+# ✅ Use reusable workflows
+jobs:
+  call-workflow:
+    uses: ./.github/workflows/reusable.yml
+
+# ✅ Create composite actions for repeated steps
+- uses: ./.github/actions/setup-environment
+  with:
+    node-version: 18
+
+# ✅ Add clear names and documentation
+- name: Install dependencies and build
+  run: npm ci && npm run build
+  # This step prepares the application for deployment
+```
+
+#### 💰 Cost Optimization
+
+```yaml
+# ✅ Use path filters to skip unnecessary runs
+on:
+  push:
+    paths:
+      - 'src/**'
+      - '!docs/**'
+
+# ✅ Cancel redundant workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ✅ Set reasonable timeouts
+jobs:
+  build:
+    timeout-minutes: 10
+
+# ✅ Use self-hosted runners for high-volume
+jobs:
+  heavy-build:
+    runs-on: self-hosted
+```
+
+#### 🎯 Additional Tips
+
+| Practice | Description | Example |
+|----------|-------------|---------|
+| **Conditional steps** | Skip unnecessary steps | `if: github.event_name == 'push'` |
+| **Continue on error** | Don't fail entire job | `continue-on-error: true` |
+| **Environment protection** | Add manual approval | `environment: production` |
+| **Artifacts retention** | Clean up old artifacts | `retention-days: 7` |
+| **Job outputs** | Share data between jobs | `outputs: version: ${{ steps.x.outputs.version }}` |
+| **Workflow triggers** | Be specific with events | `on: pull_request: types: [opened]` |
+| **Debug logging** | Enable when needed | `ACTIONS_STEP_DEBUG: true` |
 
 ---
 
 ## Common Workflow Patterns
 
-### 📊 [SLIDE PLACEHOLDER: Common CI/CD Patterns]
-_Include: Visual examples of mono-repo, microservices, and deployment patterns_
+### 📊 Common CI/CD Patterns
+
+#### **Visual examples of mono-repo, microservices, and deployment patterns**
+
+```mermaid
+graph TB
+    subgraph "Pattern 1: Mono-repo"
+        M1[Trigger] --> M2{Path Filter}
+        M2 -->|frontend/** changed| M3[Build Frontend]
+        M2 -->|backend/** changed| M4[Build Backend]
+        M2 -->|shared/** changed| M5[Build Both]
+        M3 --> M6[Deploy Frontend]
+        M4 --> M7[Deploy Backend]
+        M5 --> M6
+        M5 --> M7
+    end
+    
+    subgraph "Pattern 2: Microservices"
+        S1[Trigger] --> S2{Service Changed?}
+        S2 -->|service-a| S3[Build & Test A]
+        S2 -->|service-b| S4[Build & Test B]
+        S2 -->|service-c| S5[Build & Test C]
+        S3 --> S6[Deploy A]
+        S4 --> S7[Deploy B]
+        S5 --> S8[Deploy C]
+    end
+    
+    subgraph "Pattern 3: Multi-Environment"
+        E1[Main Branch] --> E2[Build & Test]
+        E2 --> E3[Deploy Dev]
+        E3 --> E4{Auto Test Pass?}
+        E4 -->|Yes| E5[Deploy Staging]
+        E5 --> E6{Manual Approval}
+        E6 -->|Approved| E7[Deploy Production]
+    end
+    
+    style M1 fill:#e1f5ff,stroke:#0366d6
+    style S1 fill:#e1f5ff,stroke:#0366d6
+    style E1 fill:#e1f5ff,stroke:#0366d6
+    style E7 fill:#d4edda,stroke:#28a745,stroke-width:2px
+```
+
+#### Pattern 1: Mono-repo CI/CD
+
+**Use Case:** Multiple projects in one repository
+
+```yaml
+name: Mono-repo CI/CD
+
+on:
+  push:
+    branches: [main]
+    
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'packages/frontend/**'
+            backend:
+              - 'packages/backend/**'
+  
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --workspace=packages/frontend
+      - run: npm test --workspace=packages/frontend
+      - run: npm run build --workspace=packages/frontend
+  
+  build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --workspace=packages/backend
+      - run: npm test --workspace=packages/backend
+```
+
+#### Pattern 2: Microservices Deployment
+
+**Use Case:** Independent service deployment
+
+```yaml
+name: Microservices Deploy
+
+on:
+  push:
+    paths:
+      - 'services/**'
+
+jobs:
+  detect-service:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.services.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: services
+        run: |
+          # Detect which services changed
+          CHANGED=$(git diff --name-only HEAD^..HEAD | grep '^services/' | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=$CHANGED" >> $GITHUB_OUTPUT
+  
+  build-and-deploy:
+    needs: detect-service
+    if: needs.detect-service.outputs.services != '[]'
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.detect-service.outputs.services) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.service }}
+        run: docker build -t ${{ matrix.service }} ./services/${{ matrix.service }}
+      - name: Deploy ${{ matrix.service }}
+        run: echo "Deploying ${{ matrix.service }}"
+```
+
+#### Pattern 3: Multi-Environment Pipeline
+
+**Use Case:** Dev → Staging → Production flow
+
+```yaml
+name: Multi-Environment Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: dist/
+  
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.example.com
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: echo "Deploy to dev"
+  
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: echo "Deploy to staging"
+  
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://example.com
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: echo "Deploy to production"
+```
+
+#### Pattern 4: Feature Branch Preview
+
+**Use Case:** Deploy preview for each PR
+
+```yaml
+name: Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy preview
+        if: github.event.action != 'closed'
+        run: |
+          # Deploy to preview URL
+          PREVIEW_URL="https://pr-${{ github.event.number }}.preview.example.com"
+          echo "Deploying to $PREVIEW_URL"
+      
+      - name: Cleanup preview
+        if: github.event.action == 'closed'
+        run: |
+          echo "Cleaning up preview for PR ${{ github.event.number }}"
+      
+      - name: Comment PR
+        if: github.event.action != 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Preview deployed to https://pr-${{ github.event.number }}.preview.example.com'
+            })
+```
 
 ---
 
