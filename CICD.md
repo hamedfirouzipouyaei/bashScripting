@@ -123,9 +123,142 @@ jobs:
       # deployment steps here
 ```
 
-### 📊 [SLIDE PLACEHOLDER: Jobs Execution Pattern]
+### 📊 Jobs Execution Pattern
 
-_Include: Parallel vs Sequential job execution with dependencies_
+#### **Parallel vs Sequential Job Execution with Dependencies**
+
+```mermaid
+graph LR
+    subgraph "Parallel Execution (Default)"
+        A1[Trigger] --> B1[Job: Build]
+        A1 --> C1[Job: Test]
+        A1 --> D1[Job: Lint]
+        B1 -.runs simultaneously.-> C1
+        C1 -.runs simultaneously.-> D1
+    end
+    
+    subgraph "Sequential with Dependencies"
+        A2[Trigger] --> B2[Job: Build]
+        B2 -->|needs: build| C2[Job: Test]
+        C2 -->|needs: test| D2[Job: Deploy]
+    end
+    
+    subgraph "Mixed Dependencies"
+        A3[Trigger] --> B3[Job: Build]
+        A3 --> C3[Job: Lint]
+        B3 -->|needs: build| D3[Job: Test]
+        C3 -->|needs: lint| D3
+        D3 -->|needs: test, lint| E3[Job: Deploy]
+    end
+    
+    style A1 fill:#e1f5ff,stroke:#0366d6
+    style A2 fill:#e1f5ff,stroke:#0366d6
+    style A3 fill:#e1f5ff,stroke:#0366d6
+    style E3 fill:#d4edda,stroke:#28a745
+```
+
+**Visual Representation:**
+
+```yaml
+┌─────────────────────────────────────────────────────────────────────┐
+│ Pattern 1: PARALLEL EXECUTION (Default - No Dependencies)           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   Trigger Event                                                     │
+│         │                                                           │
+│         ├──────────┬──────────┬──────────┐                          │
+│         ▼          ▼          ▼          ▼                          │
+│     [Build]    [Test]     [Lint]    [Security]                      │
+│         │          │          │          │                          │
+│         └──────────┴──────────┴──────────┘                          │
+│                     ▼                                               │
+│              All Complete                                           │
+│                                                                     │
+│   ⏱️  Total Time: ~5 min (slowest job)                              │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Pattern 2: SEQUENTIAL EXECUTION (With Dependencies)                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   Trigger Event                                                     │
+│         │                                                           │
+│         ▼                                                           │
+│     [Build] ─── needs: none                                         │
+│         │                                                           │
+│         ▼                                                           │
+│     [Test] ──── needs: build                                        │
+│         │                                                           │
+│         ▼                                                           │
+│     [Deploy] ── needs: test                                         │
+│         │                                                           │
+│         ▼                                                           │
+│     Complete                                                        │
+│                                                                     │
+│   ⏱️  Total Time: ~15 min (sum of all jobs)                         │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Pattern 3: MIXED (Parallel + Sequential)                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   Trigger Event                                                     │
+│         │                                                           │
+│         ├──────────┬──────────┐                                     │
+│         ▼          ▼          ▼                                     │
+│     [Build]    [Lint]    [Security]  ← Run in parallel              │
+│         │          │          │                                     │
+│         └────┬─────┴──────────┘                                     │
+│              ▼                                                      │
+│          [Test] ──── needs: [build, lint, security]                 │
+│              │                                                      │
+│              ▼                                                      │
+│          [Deploy] ── needs: test                                    │
+│              │                                                      │
+│              ▼                                                      │
+│          Complete                                                   │
+│                                                                     │
+│   ⏱️  Total Time: ~10 min (optimized)                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**YAML Examples:**
+
+```yaml
+# Parallel (Default)
+jobs:
+  build:
+    runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-latest
+  # All run simultaneously
+
+# Sequential
+jobs:
+  build:
+    runs-on: ubuntu-latest
+  test:
+    needs: build  # Waits for build
+    runs-on: ubuntu-latest
+  deploy:
+    needs: test   # Waits for test
+    runs-on: ubuntu-latest
+
+# Mixed
+jobs:
+  build:
+    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-latest
+  test:
+    needs: [build, lint]  # Waits for both
+    runs-on: ubuntu-latest
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+```
 
 ---
 
