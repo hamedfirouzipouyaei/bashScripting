@@ -2099,32 +2099,75 @@ jobs:
 #### Cache Strategy Flow
 
 ```mermaid
-graph TB
-    subgraph "First Run (Cache Miss)"
-        A1[Checkout Code] --> B1[Check Cache]
-        B1 -->|Cache Miss| C1[Install Dependencies]
-        C1 --> D1[Run Build]
-        D1 --> E1[Save to Cache]
-        E1 --> F1[Complete - Slow ⏱️ 5min]
+flowchart TD
+    A[Workflow Starts] --> B{Check Cache}
+    
+    subgraph "Cache Miss Path (First Run)"
+        B -->|No Cache Found| C[Install Dependencies<br/>⏱️ 3-5 minutes]
+        C --> D[Run Build Process]
+        D --> E[Save to Cache]
+        E --> F[Workflow Complete<br/>⏱️ Total: 5-6 minutes]
     end
     
-    subgraph "Second Run (Cache Hit)"
-        A2[Checkout Code] --> B2[Check Cache]
-        B2 -->|Cache Hit| C2[Restore Dependencies]
-        C2 --> D2[Run Build]
-        D2 --> F2[Complete - Fast ⚡ 2min]
+    subgraph "Cache Hit Path (Subsequent Runs)"
+        B -->|Cache Found| G[Restore Dependencies<br/>⚡ 15-30 seconds]
+        G --> H[Run Build Process]
+        H --> I[Workflow Complete<br/>⚡ Total: 2-3 minutes]
     end
     
-    subgraph "Cache Invalidation"
-        G[package.json changed] --> H[New Cache Key]
-        H --> I[Cache Miss Again]
-        I --> J[Fresh Install]
+    subgraph "Cache Invalidation Triggers"
+        J[package.json changed]
+        K[package-lock.json changed]
+        L[Cache expired]
+        M[Manual cache clear]
     end
     
-    style C1 fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
-    style C2 fill:#e6ffe6,stroke:#28a745,stroke-width:2px
-    style F1 fill:#ffe6e6,stroke:#dc3545
-    style F2 fill:#e6ffe6,stroke:#28a745
+    J --> N[Generate New Cache Key]
+    K --> N
+    L --> N
+    M --> N
+    N --> B
+    
+    style C fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style G fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style F fill:#ffe6e6,stroke:#dc3545,stroke-width:1px
+    style I fill:#e6ffe6,stroke:#28a745,stroke-width:1px
+    style N fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+```
+
+**Performance Comparison:**
+
+```yaml
+┌─────────────────────────────────────────────────────────────────────┐
+│                     CACHE PERFORMANCE IMPACT                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│ 🔴 FIRST RUN (Cache Miss):                                          │
+│ ┌─────────────────────────────────────────────────────────────────┐ │
+│ │ ⏱️  Checkout Code:           30s                                │ │
+│ │ ⏱️  Install Dependencies:    3-4 min                            │ │
+│ │ ⏱️  Build Application:       2 min                              │ │
+│ │ ⏱️  Save Cache:              30s                                │ │
+│ │ ═══════════════════════════════════════                         │ │
+│ │ 🔴 TOTAL TIME:               6-7 minutes                        │ │
+│ └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│ 🟢 SUBSEQUENT RUNS (Cache Hit):                                     │
+│ ┌─────────────────────────────────────────────────────────────────┐ │
+│ │ ⏱️  Checkout Code:           30s                                │ │
+│ │ ⚡ Restore from Cache:       15-30s                              │ │
+│ │ ⏱️  Build Application:       2 min                              │ │
+│ │ ═════════════════════════════════════════════════════════════   │ │
+│ │ 🟢 TOTAL TIME:               2.5-3 minutes                      │ │
+│ └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│ 📊 IMPROVEMENT:                                                     │
+│ • ⚡ 50-60% faster build times                                       │
+│ • 💰 Reduced CI/CD minutes usage                                    │
+│ • 🚀 Better developer experience                                    │
+│ • 🌍 Lower infrastructure costs                                     │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 #### Comprehensive Caching Examples
