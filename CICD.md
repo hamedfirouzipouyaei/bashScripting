@@ -1806,6 +1806,539 @@ jobs:
 
 ---
 
+## Artifacts, Job Outputs & Caching
+
+Understanding how to share data between jobs and optimize workflow performance is crucial for efficient CI/CD pipelines.
+
+### 📊 Data Sharing Overview
+
+```mermaid
+graph TB
+    subgraph "Job 1: Build"
+        A[Build Process] --> B[Generate Files]
+        B --> C[Create Outputs]
+        C --> D[Upload Artifacts]
+    end
+    
+    subgraph "Data Types"
+        E[Job Outputs]
+        F[Artifacts]
+        G[Cache]
+    end
+    
+    subgraph "Job 2: Test"
+        H[Download Artifacts] --> I[Use Files]
+        J[Read Job Outputs] --> K[Use Variables]
+    end
+    
+    subgraph "Job 3: Deploy"
+        L[Download Artifacts] --> M[Deploy Files]
+        N[Use Cached Dependencies] --> O[Skip Install]
+    end
+    
+    D --> F
+    C --> E
+    F --> H
+    E --> J
+    G --> N
+    
+    style A fill:#e1f5ff,stroke:#0366d6
+    style E fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style F fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style G fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+### Artifacts vs Job Outputs vs Cache
+
+| Feature | **Artifacts** | **Job Outputs** | **Cache** |
+|---------|---------------|------------------|-----------|
+| **Purpose** | Share files between jobs | Share variables/strings | Speed up builds |
+| **Data Type** | Files, directories | Strings, variables | Dependencies, build cache |
+| **Size Limit** | 10 GB per workflow | 1 MB total | 10 GB per repository |
+| **Persistence** | Days/weeks (configurable) | Current workflow only | Across workflows |
+| **Access** | Download in other jobs | Access via `needs.job.outputs` | Automatic if cache hit |
+| **Use Case** | Build outputs, test results | Version numbers, status | node_modules, pip cache |
+
+---
+
+### 1. Artifacts - File Sharing Between Jobs
+
+**Artifacts** are files created during workflow execution that can be shared between jobs or downloaded after the workflow completes.
+
+#### Automatic Artifact Creation
+
+```mermaid
+graph LR
+    A[Build Job] --> B[Create Files]
+    B --> C[Auto Upload Artifacts]
+    C --> D[Artifact Storage]
+    D --> E[Test Job]
+    E --> F[Auto Download]
+    F --> G[Use Files]
+    
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style F fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+```
+
+##### **Example: Automatic Build Artifacts**
+
+```yaml
+name: Build and Deploy Pipeline
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      # 📦 Upload build artifacts automatically
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: |
+            dist/
+            package.json
+          retention-days: 7  # Keep for 7 days
+          if-no-files-found: error  # Fail if no files found
+  
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # 📥 Download artifacts automatically
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: ./build
+      
+      - name: Run tests against built files
+        run: |
+          ls -la ./build
+          # Run integration tests using built files
+          npm run test:integration
+  
+  deploy:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # 📥 Download the same artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: ./deploy
+      
+      - name: Deploy to production
+        run: |
+          echo "Deploying files:"
+          ls -la ./deploy
+          # Deploy the built application
+```
+
+#### Manual Artifact Management
+
+```yaml
+jobs:
+  generate-reports:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate test report
+        run: |
+          mkdir -p reports
+          echo "Test results" > reports/test-report.html
+          echo "Coverage: 85%" > reports/coverage.txt
+      
+      # 📦 Upload multiple artifacts with different retention
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.run_number }}
+          path: reports/
+          retention-days: 30
+      
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-logs
+          path: logs/*.log
+          retention-days: 3  # Short retention for logs
+      
+      # 📦 Conditional artifact upload
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-debug-${{ github.run_number }}
+          path: |
+            debug/
+            *.core
+          retention-days: 14
+```
+
+---
+
+### 2. Job Outputs - Variable Sharing
+
+**Job outputs** allow you to pass string data from one job to another.
+
+#### Job Output Flow
+
+```mermaid
+graph LR
+    A[Job 1] --> B[Generate Output]
+    B --> C[Set in GITHUB_OUTPUT]
+    C --> D[Job 2]
+    D --> E[Read via needs.job1.outputs]
+    E --> F[Use Variable]
+    
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style E fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+```
+
+##### **Example: Version and Status Outputs**
+
+```yaml
+name: Build with Dynamic Versioning
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      # 📤 Define outputs
+      version: ${{ steps.version.outputs.version }}
+      should-deploy: ${{ steps.check.outputs.deploy }}
+      build-matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      # 📤 Generate semantic version
+      - name: Generate version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION=${{ github.event.release.tag_name }}
+          else
+            VERSION="1.0.0-dev.${{ github.run_number }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+      
+      # 📤 Determine if should deploy
+      - name: Check deployment conditions
+        id: check
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # 📤 Generate build matrix dynamically
+      - name: Generate matrix
+        id: matrix
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            MATRIX='["ubuntu-latest"]'
+          else
+            MATRIX='["ubuntu-latest", "windows-latest", "macos-latest"]'
+          fi
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+  
+  build:
+    needs: prepare
+    strategy:
+      matrix:
+        # 📥 Use dynamic matrix from outputs
+        os: ${{ fromJson(needs.prepare.outputs.build-matrix) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build with version
+        run: |
+          # 📥 Use version output
+          echo "Building version: ${{ needs.prepare.outputs.version }}"
+          # Set version in build process
+          npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version
+          npm run build
+  
+  deploy:
+    needs: [prepare, build]
+    # 📥 Conditional deployment based on output
+    if: needs.prepare.outputs.should-deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: |
+          echo "Deploying version: ${{ needs.prepare.outputs.version }}"
+          # Use the version in deployment
+```
+
+---
+
+### 3. Caching - Performance Optimization
+
+**Caching** stores dependencies and build artifacts to speed up subsequent workflow runs.
+
+#### Cache Strategy Flow
+
+```mermaid
+graph TB
+    subgraph "First Run (Cache Miss)"
+        A1[Checkout Code] --> B1[Check Cache]
+        B1 -->|Cache Miss| C1[Install Dependencies]
+        C1 --> D1[Run Build]
+        D1 --> E1[Save to Cache]
+        E1 --> F1[Complete - Slow ⏱️ 5min]
+    end
+    
+    subgraph "Second Run (Cache Hit)"
+        A2[Checkout Code] --> B2[Check Cache]
+        B2 -->|Cache Hit| C2[Restore Dependencies]
+        C2 --> D2[Run Build]
+        D2 --> F2[Complete - Fast ⚡ 2min]
+    end
+    
+    subgraph "Cache Invalidation"
+        G[package.json changed] --> H[New Cache Key]
+        H --> I[Cache Miss Again]
+        I --> J[Fresh Install]
+    end
+    
+    style C1 fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style C2 fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style F1 fill:#ffe6e6,stroke:#dc3545
+    style F2 fill:#e6ffe6,stroke:#28a745
+```
+
+#### Comprehensive Caching Examples
+
+##### **Node.js Dependency Caching**
+
+```yaml
+name: Node.js with Caching
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          # 🚀 Built-in npm cache
+          cache: 'npm'
+      
+      # 🚀 Manual cache for additional speed
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          # 🔑 Cache key includes package-lock for invalidation
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install dependencies
+        run: |
+          # Only install if cache miss or package.json changed
+          if [ ! -d "node_modules" ]; then
+            echo "Installing dependencies..."
+            npm ci
+          else
+            echo "Using cached dependencies!"
+          fi
+      
+      - name: Build
+        run: npm run build
+```
+
+###### **Multi-Language Caching**
+
+```yaml
+name: Multi-Language Project
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # 🚀 Python dependencies cache
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      # 🚀 Ruby dependencies cache
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+      
+      # 🚀 Custom build cache
+      - name: Cache build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            target/
+            build/
+            .build-cache/
+          key: build-${{ runner.os }}-${{ hashFiles('**/Cargo.lock', '**/package-lock.json') }}
+          restore-keys: |
+            build-${{ runner.os }}-
+      
+      # 🚀 Docker layer caching
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build with cache
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+```
+
+#### Advanced Caching Patterns
+
+##### **Cache Matrix Strategy**
+
+```yaml
+name: Matrix with Caching
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [16, 18, 20]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      # 🚀 OS and version specific cache
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          # 🔑 Include OS and Node version in cache key
+          key: ${{ matrix.os }}-node${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node${{ matrix.node }}-
+            ${{ matrix.os }}-node-
+```
+
+##### **Conditional Cache Strategy**
+
+```yaml
+name: Smart Caching
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # 🚀 Only cache on main branch (saves storage)
+      - name: Cache dependencies
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('package-lock.json') }}
+      
+      # 🚀 Fallback to restore-only cache for PRs
+      - name: Restore cache for PRs
+        if: github.ref != 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+```
+
+#### Performance Impact Visualization
+
+```yaml
+┌──────────────────────────────────────────────────────────────────────┐
+│                    PERFORMANCE COMPARISON                            │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  WITHOUT CACHING:                                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │ Checkout (30s) → Install Deps (3min) → Build (2min) = 5.5min    │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  WITH CACHING (Cache Hit):                                           │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │ Checkout (30s) → Restore Cache (15s) → Build (2min) = 2.75min   │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  💰 SAVINGS: ~50% faster builds, reduced CI/CD costs                 │
+│  ⚡ BEST FOR: Dependencies, build artifacts, test data                │
+│  🔄 INVALIDATES: When dependency files change                        │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Best Practices Summary
+
+#### 🎯 When to Use What
+
+- **Artifacts**: Share build outputs, test reports, deployment packages
+- **Job Outputs**: Share version numbers, deployment URLs, status flags
+- **Cache**: Speed up dependency installation, build processes
+
+#### 🔧 Optimization Tips
+
+```yaml
+# ✅ Use specific cache keys
+key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+
+# ✅ Set appropriate retention periods
+retention-days: 7  # For artifacts
+
+# ✅ Use restore-keys for fallback
+restore-keys: |
+  ${{ runner.os }}-npm-
+  ${{ runner.os }}-
+
+# ✅ Cache multiple paths efficiently
+path: |
+  ~/.npm
+  ~/.yarn
+  node_modules
+
+# ✅ Use conditional caching
+if: success() && github.ref == 'refs/heads/main'
+```
+
+---
+
 ## Next Steps
 
 - Setting up secrets and environment variables
