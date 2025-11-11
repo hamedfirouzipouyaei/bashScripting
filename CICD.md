@@ -2382,9 +2382,534 @@ if: success() && github.ref == 'refs/heads/main'
 
 ---
 
+## Environment Variables and Secrets
+
+Managing configuration and sensitive data is crucial for secure and flexible CI/CD pipelines.
+
+### 📊 Environment Variables & Secrets Overview
+
+```mermaid
+flowchart TD
+    A[Workflow Configuration] --> B[Environment Variables]
+    A --> C[Secrets]
+    A --> D[Job Environments]
+    
+    B --> B1[Workflow Level<br/>Available to all jobs]
+    B --> B2[Job Level<br/>Available to job steps]
+    B --> B3[Step Level<br/>Available to single step]
+    
+    C --> C1[Repository Secrets<br/>All branches]
+    C --> C2[Environment Secrets<br/>Specific environment]
+    C --> C3[Organization Secrets<br/>Multiple repos]
+    
+    D --> D1[Environment Protection<br/>Manual approval]
+    D --> D2[Environment Variables<br/>Per environment]
+    D --> D3[Environment URLs<br/>Deployment links]
+    
+    B1 --> E[Accessible via: env.VAR_NAME]
+    B2 --> E
+    B3 --> E
+    
+    C1 --> F[Accessible via: secrets.SECRET_NAME]
+    C2 --> F
+    C3 --> F
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style C fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style D fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+```
+
+### Understanding Environment Variables
+
+**Environment variables** store non-sensitive configuration data that can be accessed throughout your workflow.
+
+#### Variable Scope Hierarchy
+
+```yaml
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ENVIRONMENT VARIABLE SCOPE                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1️⃣  WORKFLOW LEVEL (Broadest Scope)                                │
+│     ┌───────────────────────────────────────────────────────────────┐ │
+│     │ env:                                                        │ │
+│     │   NODE_VERSION: '18'                                       │ │
+│     │   CI: true                                                 │ │
+│     └───┬───────────────────────────────────────────────────────────┘ │
+│         │ ↓ Available to ALL jobs and steps                       │
+│         │                                                         │
+│  2️⃣  JOB LEVEL (Medium Scope)                                       │
+│     ┌───┴───────────────────────────────────────────────────────────┐ │
+│     │ jobs:                                                       │ │
+│     │   build:                                                    │ │
+│     │     env:                                                    │ │
+│     │       BUILD_ENV: production                                │ │
+│     └───┬───────────────────────────────────────────────────────────┘ │
+│         │ ↓ Available to ALL steps in this job                   │
+│         │                                                         │
+│  3️⃣  STEP LEVEL (Narrowest Scope)                                   │
+│     ┌───┴───────────────────────────────────────────────────────────┐ │
+│     │ steps:                                                      │ │
+│     │   - name: Deploy                                            │ │
+│     │     env:                                                    │ │
+│     │       DEPLOY_TARGET: aws-prod                              │ │
+│     └─────────────────────────────────────────────────────────────────┘ │
+│         ↓ Available ONLY to this step                             │
+│                                                                     │
+│  💡 TIP: Lower levels override higher levels                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Complete Example with All Levels
+
+```yaml
+name: Multi-Level Environment Variables
+
+# 🌍 WORKFLOW-LEVEL: Available everywhere
+env:
+  NODE_VERSION: '18'
+  APP_NAME: 'my-application'
+  GLOBAL_VAR: 'accessible-everywhere'
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # 🏢 JOB-LEVEL: Available to all steps in this job
+    env:
+      BUILD_ENV: 'production'
+      JOB_VAR: 'accessible-in-build-job'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Using workflow and job level variables
+      - name: Display environment info
+        run: |
+          echo "App: ${{ env.APP_NAME }}"              # Workflow level
+          echo "Node: ${{ env.NODE_VERSION }}"         # Workflow level
+          echo "Environment: ${{ env.BUILD_ENV }}"     # Job level
+          echo "Global: ${{ env.GLOBAL_VAR }}"         # Workflow level
+      
+      # 🎯 STEP-LEVEL: Only for this step
+      - name: Build with step-specific env
+        env:
+          BUILD_TARGET: 'linux-x64'
+          STEP_VAR: 'only-in-this-step'
+        run: |
+          echo "Building for: $BUILD_TARGET"
+          echo "Using Node: ${{ env.NODE_VERSION }}"   # Still accessible
+          npm run build
+      
+      # Step-level variable not accessible here
+      - name: Next step
+        run: |
+          echo "BUILD_TARGET not available here"
+          echo "But NODE_VERSION is: ${{ env.NODE_VERSION }}"
+  
+  test:
+    runs-on: ubuntu-latest
+    # Different job-level environment
+    env:
+      TEST_ENV: 'ci'
+      JOB_VAR: 'accessible-in-test-job'
+    
+    steps:
+      - name: Run tests
+        run: |
+          echo "Global var: ${{ env.GLOBAL_VAR }}"     # ✅ Accessible
+          echo "Test env: ${{ env.TEST_ENV }}"         # ✅ Accessible
+          echo "Build env: ${{ env.BUILD_ENV }}"       # ❌ Not accessible (different job)
+```
+
+#### Default Environment Variables
+
+GitHub Actions provides many **default environment variables**:
+
+```yaml
+steps:
+  - name: Show default variables
+    run: |
+      echo "Repository: $GITHUB_REPOSITORY"           # owner/repo-name
+      echo "Ref: $GITHUB_REF"                         # refs/heads/main
+      echo "SHA: $GITHUB_SHA"                         # commit hash
+      echo "Actor: $GITHUB_ACTOR"                     # username who triggered
+      echo "Workflow: $GITHUB_WORKFLOW"               # workflow name
+      echo "Run Number: $GITHUB_RUN_NUMBER"           # auto-incrementing number
+      echo "Run ID: $GITHUB_RUN_ID"                   # unique run identifier
+      echo "Event Name: $GITHUB_EVENT_NAME"           # push, pull_request, etc.
+      echo "Workspace: $GITHUB_WORKSPACE"             # working directory path
+      echo "Runner OS: $RUNNER_OS"                    # Linux, Windows, macOS
+```
+
+**Common Default Variables:**
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `GITHUB_REPOSITORY` | Owner and repository name | `username/repo` |
+| `GITHUB_REF` | Branch or tag ref | `refs/heads/main` |
+| `GITHUB_SHA` | Commit SHA | `ffac537e6cbbf934b08745a378932722df287a53` |
+| `GITHUB_ACTOR` | User who triggered | `octocat` |
+| `GITHUB_EVENT_NAME` | Event type | `push`, `pull_request` |
+| `RUNNER_OS` | Operating system | `Linux`, `Windows`, `macOS` |
+
+---
+
+### Working with Secrets
+
+**Secrets** are encrypted environment variables for sensitive data like passwords, API keys, and tokens.
+
+#### Secret Types and Hierarchy
+
+```mermaid
+flowchart TD
+    A[Secret Types] --> B[Repository Secrets]
+    A --> C[Environment Secrets]
+    A --> D[Organization Secrets]
+    
+    B --> B1[Access: All workflows in repo]
+    B --> B2[Visibility: Single repository]
+    B --> B3[Use: General credentials]
+    
+    C --> C1[Access: Specific environment only]
+    C --> C2[Visibility: Protected by rules]
+    C --> C3[Use: Production keys, tokens]
+    
+    D --> D1[Access: Multiple repositories]
+    D --> D2[Visibility: Organization wide]
+    D --> D3[Use: Shared credentials]
+    
+    style B fill:#e6f3ff,stroke:#0366d6,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+```
+
+#### How to Create Secrets
+
+**Repository Secrets:**
+1. Go to your repository on GitHub
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Click **New repository secret**
+4. Enter name (e.g., `API_KEY`) and value
+5. Click **Add secret**
+
+**Environment Secrets:**
+1. Go to **Settings** → **Environments**
+2. Create or select an environment (e.g., `production`)
+3. Add **Environment secrets**
+4. Optionally configure protection rules
+
+#### Using Secrets in Workflows
+
+```yaml
+name: Working with Secrets
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # ✅ Using secrets in environment variables
+      - name: Deploy with credentials
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          # Secrets are automatically masked in logs
+          echo "Deploying application..."
+          # API_KEY value will appear as *** in logs
+          ./deploy.sh
+      
+      # ✅ Using secrets in action inputs
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      # ✅ Using GitHub token (automatically provided)
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.0
+          release_name: Release 1.0.0
+```
+
+#### Secret Security Best Practices
+
+```yaml
+# ❌ DON'T: Echo or print secrets (defeats masking)
+- name: Bad practice
+  run: |
+    echo "My API key is: ${{ secrets.API_KEY }}"     # Don't do this!
+    echo "Password: ${{ secrets.PASSWORD }}"         # Secrets exposed!
+
+# ✅ DO: Use secrets without exposing them
+- name: Good practice
+  env:
+    API_KEY: ${{ secrets.API_KEY }}
+  run: |
+    # Use the secret, don't print it
+    curl -H "Authorization: Bearer $API_KEY" https://api.example.com
+
+# ❌ DON'T: Store secrets in code
+- name: Bad practice
+  env:
+    API_KEY: "hardcoded-key-123"                     # Never do this!
+
+# ✅ DO: Always use GitHub secrets
+- name: Good practice
+  env:
+    API_KEY: ${{ secrets.API_KEY }}
+
+# ✅ DO: Use environment secrets for sensitive deployments
+- name: Production deployment
+  environment: production                            # Requires approval
+  env:
+    PROD_API_KEY: ${{ secrets.PROD_API_KEY }}
+
+# ✅ DO: Limit GITHUB_TOKEN permissions
+permissions:
+  contents: read
+  pull-requests: write
+  # Don't grant unnecessary permissions
+```
+
+---
+
+### Job Environments
+
+**Environments** provide deployment protection rules and environment-specific secrets/variables.
+
+#### Environment Configuration
+
+```mermaid
+flowchart LR
+    A[Job Starts] --> B{Environment Set?}
+    B -->|Yes| C[Check Protection Rules]
+    B -->|No| D[Run Immediately]
+    
+    C --> E{Required Reviewers?}
+    E -->|Yes| F[Wait for Approval]
+    E -->|No| G{Wait Timer?}
+    
+    F --> H[Reviewer Approves]
+    G -->|Yes| I[Wait X Minutes]
+    G -->|No| J[Load Environment Config]
+    
+    H --> J
+    I --> J
+    D --> J
+    
+    J --> K[Access Environment Secrets]
+    K --> L[Access Environment Variables]
+    L --> M[Run Job Steps]
+    M --> N[Update Environment URL]
+    
+    style C fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style F fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style K fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style L fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+```
+
+#### Complete Environment Example
+
+```yaml
+name: Multi-Environment Deployment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # Development - No protection
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.example.com
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to dev
+        env:
+          # Environment-specific secrets
+          API_KEY: ${{ secrets.DEV_API_KEY }}
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          # Environment variables
+          ENVIRONMENT: development
+        run: |
+          echo "Deploying to: ${{ vars.DEPLOYMENT_REGION }}"
+          echo "Environment: $ENVIRONMENT"
+          ./deploy.sh dev
+  
+  # Staging - Wait timer protection
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to staging
+        env:
+          API_KEY: ${{ secrets.STAGING_API_KEY }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          ENVIRONMENT: staging
+        run: |
+          ./deploy.sh staging
+  
+  # Production - Manual approval required
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://example.com
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to production
+        env:
+          # Production secrets (different from dev/staging)
+          API_KEY: ${{ secrets.PROD_API_KEY }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          ENVIRONMENT: production
+          # Additional production configs
+          CDN_URL: ${{ secrets.CDN_URL }}
+          MONITORING_KEY: ${{ secrets.DATADOG_API_KEY }}
+        run: |
+          echo "Deploying to production..."
+          ./deploy.sh production
+      
+      - name: Notify deployment
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST $SLACK_WEBHOOK \
+            -d '{"text":"🚀 Production deployment complete!"}'
+```
+
+#### Environment Protection Rules
+
+Configure in GitHub: **Settings** → **Environments** → **[Environment Name]**
+
+**Available Protection Rules:**
+
+1. **Required Reviewers**
+   - Specify users/teams who must approve
+   - Up to 6 reviewers
+   - Useful for production deployments
+
+2. **Wait Timer**
+   - Delay deployment by specified minutes
+   - Good for staged rollouts
+   - Allows time for monitoring
+
+3. **Deployment Branches**
+   - Restrict which branches can deploy
+   - E.g., only `main` can deploy to production
+   - Prevents accidental deployments from feature branches
+
+**Example Protection Setup:**
+
+```yaml
+# In GitHub UI, configure:
+# Environment: production
+# - Required reviewers: @senior-devs, @ops-team
+# - Wait timer: 5 minutes
+# - Deployment branches: main only
+
+# Then in workflow:
+jobs:
+  deploy-production:
+    environment: production  # Will enforce all rules above
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: echo "Deploying after approval and wait"
+```
+
+#### Environment Variables vs Secrets
+
+```yaml
+name: Variables and Secrets
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Environment Variables (non-sensitive)
+      # Set in: Settings → Environments → [env] → Variables
+      - name: Use environment variables
+        run: |
+          echo "Region: ${{ vars.DEPLOYMENT_REGION }}"
+          echo "Cluster: ${{ vars.K8S_CLUSTER_NAME }}"
+          echo "Replicas: ${{ vars.REPLICA_COUNT }}"
+      
+      # Environment Secrets (sensitive)
+      # Set in: Settings → Environments → [env] → Secrets
+      - name: Use environment secrets
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          # Secrets are masked in logs
+          echo "Connecting to database..."
+          ./app --api-key=$API_KEY
+```
+
+### Quick Reference
+
+#### Accessing Variables and Secrets
+
+| Type | Syntax | Example | Scope |
+|------|--------|---------|-------|
+| Environment Variable | `${{ env.VAR }}` | `${{ env.NODE_VERSION }}` | Workflow/Job/Step |
+| Secret | `${{ secrets.SECRET }}` | `${{ secrets.API_KEY }}` | Workflow/Job/Step |
+| Environment Variable | `${{ vars.VAR }}` | `${{ vars.REGION }}` | Environment-specific |
+| Default Variable | `$GITHUB_VAR` | `$GITHUB_SHA` | Anywhere |
+| Context Variable | `${{ github.var }}` | `${{ github.ref }}` | Anywhere |
+
+#### Best Practices Summary [Environment Variables]
+
+✅ **DO:**
+
+- Use secrets for all sensitive data (passwords, tokens, keys)
+- Rotate secrets regularly
+- Use environment-specific secrets for different stages
+- Set minimal required permissions for `GITHUB_TOKEN`
+- Use environment protection rules for production
+- Name secrets in UPPER_SNAKE_CASE
+
+❌ **DON'T:**
+
+- Print or echo secret values
+- Hardcode credentials in workflows
+- Use the same secrets across all environments
+- Grant broad permissions unnecessarily
+- Store secrets in code or commit them to git
+
+---
+
 ## Next Steps
 
-- Setting up secrets and environment variables
 - Creating reusable workflows
 - Advanced GitHub Actions features
 - Integrating with external services
