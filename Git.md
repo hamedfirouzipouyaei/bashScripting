@@ -464,9 +464,9 @@ gitGraph
     commit id: "Add user.txt"
     branch feature
     checkout feature
-    commit id: "Edit user.txt line 5" type: HIGHLIGHT
+    commit id: "Edit user.txt line 5 (feature)" type: HIGHLIGHT
     checkout main
-    commit id: "Edit user.txt line 5" type: REVERSE
+    commit id: "Edit user.txt line 5 (main)" type: REVERSE
     merge feature tag: "CONFLICT!"
     commit id: "Resolved conflict"
 ```
