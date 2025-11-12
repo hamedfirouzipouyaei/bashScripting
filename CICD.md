@@ -47,7 +47,7 @@ on:
 ### 📊 Workflow Lifecycle Diagram
 
 ```mermaid
-graph TD
+flowchart TD
     A[GitHub Event Trigger] -->|push, pull_request, etc.| B[Workflow Started]
     B --> C{Jobs}
     
@@ -128,7 +128,7 @@ jobs:
 #### **Parallel vs Sequential Job Execution with Dependencies**
 
 ```mermaid
-graph LR
+flowchart LR
     subgraph "Parallel Execution (Default)"
         A1[Trigger] --> B1[Job: Build]
         A1 --> C1[Job: Test]
@@ -295,7 +295,7 @@ steps:
 #### **Sequential execution of steps within a job**
 
 ```mermaid
-graph TB
+flowchart TB
     A[Job Starts] --> B[Step 1: Checkout Code]
     B --> C[Step 2: Setup Environment]
     C --> D[Step 3: Install Dependencies]
@@ -448,7 +448,7 @@ jobs:
 #### **GitHub's Cloud Infrastructure**
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph "GitHub Cloud"
         A[Your Workflow Trigger] --> B[GitHub Actions Service]
         B --> C{Runner Queue}
@@ -671,251 +671,6 @@ Your Self-Hosted Runner
 | **Startup Time** | ~10-20 seconds | Faster (already running) |
 | **Concurrent Jobs** | Based on plan limits | Based on available runners |
 | **Best For** | Public repos, standard builds | Private repos, custom requirements, internal resources |
-
----
-
-## Complete Workflow YAML Structure
-
-Here's a comprehensive example workflow with detailed explanations for each section:
-
-```yaml
-# Workflow name (appears in GitHub Actions UI)
-name: CI/CD Pipeline
-
-# Triggers: Define when this workflow runs
-on:
-  # Run on push to specific branches
-  push:
-    branches: 
-      - main
-      - develop
-    paths:
-      - 'src/**'        # Only trigger if files in src/ change
-      - 'package.json'
-    
-  # Run on pull requests targeting main
-  pull_request:
-    branches: 
-      - main
-    
-  # Scheduled runs (cron syntax)
-  schedule:
-    - cron: '0 2 * * 1'  # Every Monday at 2 AM UTC
-  
-  # Manual trigger from GitHub UI
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
-
-# Environment variables available to all jobs
-env:
-  NODE_VERSION: '18'
-  DOCKER_REGISTRY: 'ghcr.io'
-
-# Define the jobs
-jobs:
-  # Job 1: Build and Test
-  build:
-    # Job name displayed in UI
-    name: Build and Test Application
-    
-    # Runner environment
-    runs-on: ubuntu-latest
-    
-    # Job-level environment variables
-    env:
-      CI: true
-    
-    # Job outputs that other jobs can use
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-    
-    # Sequential steps within this job
-    steps:
-      # Step 1: Checkout the repository code
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history for all branches
-      
-      # Step 2: Set up Node.js environment
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'  # Cache npm dependencies
-      
-      # Step 3: Install dependencies
-      - name: Install dependencies
-        run: npm ci  # ci is faster and more reliable for CI
-      
-      # Step 4: Run linting
-      - name: Lint code
-        run: npm run lint
-        continue-on-error: false  # Fail job if linting fails
-      
-      # Step 5: Run tests
-      - name: Run tests
-        run: npm test -- --coverage
-        env:
-          NODE_ENV: test
-      
-      # Step 6: Upload coverage reports
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/coverage-final.json
-          fail_ci_if_error: true
-      
-      # Step 7: Build the application
-      - name: Build application
-        run: npm run build
-      
-      # Step 8: Get version for other jobs
-      - name: Get version
-        id: get_version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-      
-      # Step 9: Upload build artifacts
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: dist/
-          retention-days: 7
-  
-  # Job 2: Security Scanning
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    # Run in parallel with build job
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-      
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-  
-  # Job 3: Docker Build
-  docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: [build, security]  # Wait for both jobs to complete
-    
-    # Only run on main branch
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      # Download artifacts from build job
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: dist/
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-  
-  # Job 4: Deploy to Staging
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: docker
-    environment: 
-      name: staging
-      url: https://staging.example.com
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Deploy to staging server
-        run: |
-          echo "Deploying version ${{ needs.build.outputs.version }}"
-          # Add your deployment script here
-        env:
-          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
-      
-      - name: Run smoke tests
-        run: |
-          # Add health check or smoke test commands
-          curl --retry 5 --retry-delay 10 https://staging.example.com/health
-  
-  # Job 5: Deploy to Production
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: deploy-staging
-    environment:
-      name: production
-      url: https://example.com
-    
-    # Only deploy to production on manual approval
-    if: github.event_name == 'workflow_dispatch'
-    
-    steps:
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production"
-          # Add production deployment script
-        env:
-          DEPLOY_KEY: ${{ secrets.PRODUCTION_DEPLOY_KEY }}
-      
-      - name: Notify team
-        if: always()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-```
 
 ---
 
@@ -1413,399 +1168,6 @@ strategy:
 
 ---
 
-## Best Practices
-
-1. **Use specific action versions**: `actions/checkout@v4` (not `@main`)
-2. **Cache dependencies**: Speed up workflows with caching
-3. **Fail fast**: Use `continue-on-error: false` for critical steps
-4. **Use secrets**: Never hardcode credentials
-5. **Limit concurrency**: Prevent multiple deployments
-6. **Use environments**: Add protection rules for production
-7. **Keep workflows DRY**: Use reusable workflows and composite actions
-8. **Monitor usage**: Check action minutes and storage
-
-### 📊 Best Practices Checklist
-
-#### **Workflow Optimization Tips**
-
-```mermaid
-graph TD
-    A[GitHub Actions Best Practices] --> B[Security]
-    A --> C[Performance]
-    A --> D[Maintainability]
-    A --> E[Cost Optimization]
-    
-    B --> B1[✓ Use specific action versions]
-    B --> B2[✓ Secure secrets properly]
-    B --> B3[✓ Limit permissions GITHUB_TOKEN]
-    B --> B4[✓ Pin dependencies]
-    
-    C --> C1[✓ Cache dependencies]
-    C --> C2[✓ Parallelize jobs]
-    C --> C3[✓ Use matrix strategy]
-    C --> C4[✓ Optimize Docker layers]
-    
-    D --> D1[✓ Use reusable workflows]
-    D --> D2[✓ Document workflows]
-    D --> D3[✓ Keep workflows DRY]
-    D --> D4[✓ Use composite actions]
-    
-    E --> E1[✓ Path filters to skip builds]
-    E --> E2[✓ Cancel redundant runs]
-    E --> E3[✓ Use self-hosted for heavy]
-    E --> E4[✓ Set job timeouts]
-    
-    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
-    style B fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
-    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
-    style D fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
-    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
-```
-
-**Best Practices Checklist:**
-
-#### 🔒 Security
-
-```yaml
-# ✅ DO: Use specific versions
-- uses: actions/checkout@v4
-
-# ❌ DON'T: Use branches (can change)
-- uses: actions/checkout@main
-
-# ✅ DO: Limit permissions
-permissions:
-  contents: read
-  pull-requests: write
-
-# ✅ DO: Use secrets for credentials
-env:
-  API_KEY: ${{ secrets.API_KEY }}
-
-# ❌ DON'T: Hardcode credentials
-env:
-  API_KEY: "abc123xyz"
-```
-
-#### ⚡ Performance
-
-```yaml
-# ✅ Cache dependencies
-- uses: actions/cache@v4
-  with:
-    path: ~/.npm
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
-# ✅ Parallelize independent jobs
-jobs:
-  test:
-    runs-on: ubuntu-latest
-  lint:
-    runs-on: ubuntu-latest  # Runs in parallel with test
-
-# ✅ Use matrix for multiple versions
-strategy:
-  matrix:
-    node: [16, 18, 20]
-    os: [ubuntu-latest, windows-latest]
-
-# ✅ Fail fast for quick feedback
-strategy:
-  fail-fast: true
-```
-
-#### 🛠️ Maintainability
-
-```yaml
-# ✅ Use reusable workflows
-jobs:
-  call-workflow:
-    uses: ./.github/workflows/reusable.yml
-
-# ✅ Create composite actions for repeated steps
-- uses: ./.github/actions/setup-environment
-  with:
-    node-version: 18
-
-# ✅ Add clear names and documentation
-- name: Install dependencies and build
-  run: npm ci && npm run build
-  # This step prepares the application for deployment
-```
-
-#### 💰 Cost Optimization
-
-```yaml
-# ✅ Use path filters to skip unnecessary runs
-on:
-  push:
-    paths:
-      - 'src/**'
-      - '!docs/**'
-
-# ✅ Cancel redundant workflow runs
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-# ✅ Set reasonable timeouts
-jobs:
-  build:
-    timeout-minutes: 10
-
-# ✅ Use self-hosted runners for high-volume
-jobs:
-  heavy-build:
-    runs-on: self-hosted
-```
-
-#### 🎯 Additional Tips
-
-| Practice | Description | Example |
-|----------|-------------|---------|
-| **Conditional steps** | Skip unnecessary steps | `if: github.event_name == 'push'` |
-| **Continue on error** | Don't fail entire job | `continue-on-error: true` |
-| **Environment protection** | Add manual approval | `environment: production` |
-| **Artifacts retention** | Clean up old artifacts | `retention-days: 7` |
-| **Job outputs** | Share data between jobs | `outputs: version: ${{ steps.x.outputs.version }}` |
-| **Workflow triggers** | Be specific with events | `on: pull_request: types: [opened]` |
-| **Debug logging** | Enable when needed | `ACTIONS_STEP_DEBUG: true` |
-
----
-
-## Common Workflow Patterns
-
-### 📊 Common CI/CD Patterns
-
-#### **Visual examples of mono-repo, microservices, and deployment patterns**
-
-```mermaid
-graph TB
-    subgraph "Pattern 1: Mono-repo"
-        M1[Trigger] --> M2{Path Filter}
-        M2 -->|frontend/** changed| M3[Build Frontend]
-        M2 -->|backend/** changed| M4[Build Backend]
-        M2 -->|shared/** changed| M5[Build Both]
-        M3 --> M6[Deploy Frontend]
-        M4 --> M7[Deploy Backend]
-        M5 --> M6
-        M5 --> M7
-    end
-    
-    subgraph "Pattern 2: Microservices"
-        S1[Trigger] --> S2{Service Changed?}
-        S2 -->|service-a| S3[Build & Test A]
-        S2 -->|service-b| S4[Build & Test B]
-        S2 -->|service-c| S5[Build & Test C]
-        S3 --> S6[Deploy A]
-        S4 --> S7[Deploy B]
-        S5 --> S8[Deploy C]
-    end
-    
-    subgraph "Pattern 3: Multi-Environment"
-        E1[Main Branch] --> E2[Build & Test]
-        E2 --> E3[Deploy Dev]
-        E3 --> E4{Auto Test Pass?}
-        E4 -->|Yes| E5[Deploy Staging]
-        E5 --> E6{Manual Approval}
-        E6 -->|Approved| E7[Deploy Production]
-    end
-    
-    style M1 fill:#e1f5ff,stroke:#0366d6
-    style S1 fill:#e1f5ff,stroke:#0366d6
-    style E1 fill:#e1f5ff,stroke:#0366d6
-    style E7 fill:#d4edda,stroke:#28a745,stroke-width:2px
-```
-
-#### Pattern 1: Mono-repo CI/CD
-
-**Use Case:** Multiple projects in one repository
-
-```yaml
-name: Mono-repo CI/CD
-
-on:
-  push:
-    branches: [main]
-    
-jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      frontend: ${{ steps.changes.outputs.frontend }}
-      backend: ${{ steps.changes.outputs.backend }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            frontend:
-              - 'packages/frontend/**'
-            backend:
-              - 'packages/backend/**'
-  
-  build-frontend:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm ci --workspace=packages/frontend
-      - run: npm test --workspace=packages/frontend
-      - run: npm run build --workspace=packages/frontend
-  
-  build-backend:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm ci --workspace=packages/backend
-      - run: npm test --workspace=packages/backend
-```
-
-#### Pattern 2: Microservices Deployment
-
-**Use Case:** Independent service deployment
-
-```yaml
-name: Microservices Deploy
-
-on:
-  push:
-    paths:
-      - 'services/**'
-
-jobs:
-  detect-service:
-    runs-on: ubuntu-latest
-    outputs:
-      services: ${{ steps.services.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - id: services
-        run: |
-          # Detect which services changed
-          CHANGED=$(git diff --name-only HEAD^..HEAD | grep '^services/' | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          echo "matrix=$CHANGED" >> $GITHUB_OUTPUT
-  
-  build-and-deploy:
-    needs: detect-service
-    if: needs.detect-service.outputs.services != '[]'
-    strategy:
-      matrix:
-        service: ${{ fromJson(needs.detect-service.outputs.services) }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build ${{ matrix.service }}
-        run: docker build -t ${{ matrix.service }} ./services/${{ matrix.service }}
-      - name: Deploy ${{ matrix.service }}
-        run: echo "Deploying ${{ matrix.service }}"
-```
-
-#### Pattern 3: Multi-Environment Pipeline
-
-**Use Case:** Dev → Staging → Production flow
-
-```yaml
-name: Multi-Environment Pipeline
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: dist/
-  
-  deploy-dev:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: development
-      url: https://dev.example.com
-    steps:
-      - uses: actions/download-artifact@v4
-      - run: echo "Deploy to dev"
-  
-  deploy-staging:
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://staging.example.com
-    steps:
-      - uses: actions/download-artifact@v4
-      - run: echo "Deploy to staging"
-  
-  deploy-production:
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://example.com
-    steps:
-      - uses: actions/download-artifact@v4
-      - run: echo "Deploy to production"
-```
-
-#### Pattern 4: Feature Branch Preview
-
-**Use Case:** Deploy preview for each PR
-
-```yaml
-name: Preview Deployment
-
-on:
-  pull_request:
-    types: [opened, synchronize, closed]
-
-jobs:
-  preview:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Deploy preview
-        if: github.event.action != 'closed'
-        run: |
-          # Deploy to preview URL
-          PREVIEW_URL="https://pr-${{ github.event.number }}.preview.example.com"
-          echo "Deploying to $PREVIEW_URL"
-      
-      - name: Cleanup preview
-        if: github.event.action == 'closed'
-        run: |
-          echo "Cleaning up preview for PR ${{ github.event.number }}"
-      
-      - name: Comment PR
-        if: github.event.action != 'closed'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 Preview deployed to https://pr-${{ github.event.number }}.preview.example.com'
-            })
-```
-
----
-
 ## Artifacts, Job Outputs & Caching
 
 Understanding how to share data between jobs and optimize workflow performance is crucial for efficient CI/CD pipelines.
@@ -1813,7 +1175,7 @@ Understanding how to share data between jobs and optimize workflow performance i
 ### 📊 Data Sharing Overview
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph "Job 1: Build"
         A[Build Process] --> B[Generate Files]
         B --> C[Create Outputs]
@@ -1868,7 +1230,7 @@ graph TB
 #### Automatic Artifact Creation
 
 ```mermaid
-graph LR
+flowchart LR
     A[Build Job] --> B[Create Files]
     B --> C[Auto Upload Artifacts]
     C --> D[Artifact Storage]
@@ -2000,7 +1362,7 @@ jobs:
 #### Job Output Flow
 
 ```mermaid
-graph LR
+flowchart LR
     A[Job 1] --> B[Generate Output]
     B --> C[Set in GITHUB_OUTPUT]
     C --> D[Job 2]
@@ -2699,7 +2061,7 @@ permissions:
 #### Environment Configuration
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Job Starts] --> B{Environment Set?}
     B -->|Yes| C[Check Protection Rules]
     B -->|No| D[Run Immediately]
@@ -2910,9 +2272,2491 @@ jobs:
 
 ---
 
+## Controlling Workflow and Job Execution
+
+Advanced control mechanisms allow you to fine-tune when and how your workflows and jobs run, optimizing for efficiency, cost, and reliability.
+Generally, the default setting is that if a step fails, the subsequent steps will fail. However, sometimes it might be required to continue the testing process for the remaining steps even when a step has failed.
+
+### 📊 Workflow Control Overview
+
+```mermaid
+flowchart TD
+    A[Workflow Controls] --> B[Concurrency]
+    A --> C[Conditions]
+    A --> D[Manual Controls]
+    A --> E[Timeouts]
+    
+    B --> B1[Cancel in-progress runs]
+    B --> B2[Queue workflows]
+    B --> B3[Limit parallel jobs]
+    
+    C --> C1[if conditionals]
+    C --> C2[Status functions]
+    C --> C3[Expression syntax]
+    
+    D --> D1[workflow_dispatch]
+    D --> D2[Approval gates]
+    D --> D3[Manual triggers]
+    
+    E --> E1[Job timeouts]
+    E --> E2[Step timeouts]
+    E --> E3[Workflow timeouts]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+### Concurrency Control
+
+**Concurrency** settings control how multiple workflow runs interact, preventing resource conflicts and reducing costs.
+
+#### Cancel In-Progress Runs
+
+```yaml
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel previous runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+```
+
+**How it works:**
+
+- **`group`**: Defines the concurrency group (unique identifier)
+- **`cancel-in-progress`**: If `true`, cancels older runs when new one starts
+- Useful for PRs where you push frequent commits
+
+#### Advanced Concurrency Patterns
+
+```yaml
+# Pattern 1: Different concurrency per branch
+name: Deploy
+
+on:
+  push:
+
+concurrency:
+  # Main branch: queue deployments (don't cancel)
+  # Feature branches: cancel old runs
+  group: ${{ github.ref == 'refs/heads/main' && format('deploy-{0}', github.run_id) || format('deploy-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Pattern 2: Per-environment concurrency
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    # Only one production deployment at a time
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false  # Queue instead of cancel
+    steps:
+      - run: echo "Deploying to production"
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    # Cancel old staging deployments
+    concurrency:
+      group: staging-deployment
+      cancel-in-progress: true
+    steps:
+      - run: echo "Deploying to staging"
+```
+
+#### Job-Level Concurrency
+
+```yaml
+jobs:
+  expensive-job:
+    runs-on: ubuntu-latest
+    # Limit this specific job across workflows
+    concurrency:
+      group: expensive-resource
+      cancel-in-progress: false  # Queue jobs
+    steps:
+      - name: Use shared resource
+        run: ./run-expensive-operation.sh
+  
+  parallel-job:
+    runs-on: ubuntu-latest
+    # No concurrency limits - run in parallel
+    steps:
+      - run: echo "Can run multiple instances"
+```
+
+---
+
+### Conditional Execution
+
+Use **`if` conditionals** to control when jobs and steps run based on dynamic conditions.
+
+#### Status Check Functions
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Run tests
+        id: test
+        run: npm test
+        continue-on-error: true
+      
+      # Only run if tests succeed
+      - name: Deploy
+        if: success()
+        run: echo "Tests passed, deploying..."
+      
+      # Only run if tests fail
+      - name: Notify failure
+        if: failure()
+        run: echo "Tests failed!"
+      
+      # Always run (even if previous steps fail)
+      - name: Cleanup
+        if: always()
+        run: rm -rf temp/
+      
+      # Run if workflow was cancelled
+      - name: Handle cancellation
+        if: cancelled()
+        run: echo "Workflow was cancelled"
+```
+
+**Status Functions:**
+
+| Function | When it runs |
+|----------|-------------|
+| `success()` | All previous steps succeeded |
+| `failure()` | Any previous step failed |
+| `always()` | Always runs (regardless of status) |
+| `cancelled()` | Workflow was cancelled |
+
+#### Conditional Based on Events
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Only on push to main
+      - name: Deploy to production
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./deploy-prod.sh
+      
+      # Only on pull requests
+      - name: Preview deployment
+        if: github.event_name == 'pull_request'
+        run: ./deploy-preview.sh
+      
+      # Only on tags
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: ./create-release.sh
+```
+
+#### Conditional Based on Changed Files
+
+```yaml
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+  
+  build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Building backend..."
+  
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Building frontend..."
+```
+
+#### Conditional Based on Labels
+
+```yaml
+jobs:
+  deploy-preview:
+    if: contains(github.event.pull_request.labels.*.name, 'deploy-preview')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying preview environment"
+  
+  run-e2e-tests:
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'e2e') ||
+      contains(github.event.pull_request.labels.*.name, 'test-all')
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run test:e2e
+```
+
+#### Complex Conditional Expressions
+
+```yaml
+jobs:
+  deploy:
+    # Multiple conditions with AND/OR
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying"
+  
+  security-scan:
+    # Run on PRs from forks, but not on internal branches
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Running security scan on external PR"
+```
+
+---
+
+### Manual Workflow Controls
+
+#### Workflow Dispatch (Manual Trigger)
+
+```yaml
+name: Manual Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+        default: 'staging'
+      
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      
+      dry-run:
+        description: 'Perform a dry run?'
+        required: false
+        type: boolean
+        default: false
+      
+      log-level:
+        description: 'Log level'
+        required: false
+        type: choice
+        options:
+          - debug
+          - info
+          - warning
+          - error
+        default: 'info'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy
+        run: |
+          echo "Deploying to: ${{ inputs.environment }}"
+          echo "Version: ${{ inputs.version }}"
+          echo "Dry run: ${{ inputs.dry-run }}"
+          echo "Log level: ${{ inputs.log-level }}"
+          
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "DRY RUN MODE - No actual deployment"
+            ./deploy.sh --dry-run --env=${{ inputs.environment }}
+          else
+            ./deploy.sh --env=${{ inputs.environment }} --version=${{ inputs.version }}
+          fi
+```
+
+#### Re-running Workflows
+
+```yaml
+# Allow workflows to be re-run from failed jobs
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+  
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    # Skip if this is a re-run of only failed jobs
+    if: success() && !github.event.workflow_run.conclusion
+    steps:
+      - run: ./deploy.sh
+```
+
+---
+
+### Timeouts and Limits
+
+#### Job Timeouts
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # Fail if job takes > 10 minutes
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm run build
+  
+  long-running-job:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max
+    steps:
+      - run: ./long-process.sh
+```
+
+**Default timeout:** 360 minutes (6 hours)
+
+#### Step Timeouts
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Unit tests
+        timeout-minutes: 5
+        run: npm test
+      
+      - name: Integration tests
+        timeout-minutes: 15
+        run: npm run test:integration
+      
+      - name: E2E tests
+        timeout-minutes: 30
+        run: npm run test:e2e
+```
+
+---
+
+### Continue on Error
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Job continues even if this step fails
+      - name: Linting
+        continue-on-error: true
+        run: npm run lint
+      
+      # This will still run
+      - name: Tests
+        run: npm test
+      
+      # Check if previous step failed
+      - name: Handle lint failure
+        if: steps.lint.outcome == 'failure'
+        run: echo "Linting failed but continuing"
+  
+  optional-job:
+    runs-on: ubuntu-latest
+    # Job failure doesn't affect dependent jobs
+    continue-on-error: true
+    steps:
+      - run: exit 1  # Intentional failure
+  
+  dependent-job:
+    needs: optional-job
+    runs-on: ubuntu-latest
+    # This runs even if optional-job fails
+    if: always()
+    steps:
+      - run: echo "Running regardless"
+```
+
+### 📸 Section Summary
+
+<!-- ![Controlling Workflow and Job Execution](images/Controlling%20wrokflow%20and%20job%20execution.png) -->
+
+```mermaid
+flowchart TD
+    A[Conditional Jobs & Steps] --> A1["Control Step or Job execution with 'if' & dynamic expressions"]
+    A1 --> A2["Change default behavior with 'failure()', 'success()', 'cancelled()' or 'always()'"]
+    A2 --> A3["Use 'continue-on-error' to ignore Step failure"]
+
+    B[Matrix Jobs] --> B1[Run multiple Job configurations in parallel]
+    B1 --> B2[Add or remove individual combinations]
+    B2 --> B3["Control whether a single failing Job should cancel all other Matrix Jobs via 'continue-on-error'"]
+
+    C[Reusable Workflows] --> C1["Workflows can be reused via the 'workflow_call' event"]
+    C1 --> C2["Reuse any logic as many Jobs & Steps as needed"]
+    C2 --> C3["Work with 'inputs', 'outputs' and 'secrets' as required"]
+
+    style A fill:#FFAC1C,stroke:#006938,stroke-width:2px,color:#1C1515
+    style B fill:#FF7F50,stroke:#006938,stroke-width:2px,color:#1C1515
+    style C fill:#FF5F15,stroke:#006938,stroke-width:2px,color:#1C1515
+    style A1 fill:#E07E7E,stroke:#FF0000,stroke-width:2px,color:#ffffff
+    style A2 fill:#E07E7E,stroke:#FF0000,stroke-width:2px,color:#ffffff
+    style A3 fill:#E07E7E,stroke:#FF0000,stroke-width:2px,color:#ffffff
+    style B1 fill:#B4F0B9,stroke:#006938,stroke-width:2px,color:#000000
+    style B2 fill:#B4F0B9,stroke:#006938,stroke-width:2px,color:#000000
+    style B3 fill:#B4F0B9,stroke:#006938,stroke-width:2px,color:#000000
+    style C1 fill:#9B9E9C,stroke:#006938,stroke-width:2px,color:#ffffff
+    style C2 fill:#9B9E9C,stroke:#006938,stroke-width:2px,color:#ffffff
+    style C3 fill:#9B9E9C,stroke:#006938,stroke-width:2px,color:#ffffff
+
+```
+
+---
+
+## Jobs and Docker Containers
+
+GitHub Actions allows jobs to run inside Docker containers, providing consistent, isolated environments with specific dependencies pre-installed.
+
+### 📊 Container Jobs Overview
+
+```mermaid
+flowchart TD
+    A[GitHub Actions Runner] --> B{Job Type}
+    
+    B -->|Standard Job| C[VM with OS]
+    C --> C1[Install Dependencies]
+    C1 --> C2[Run Steps]
+    
+    B -->|Container Job| D[VM with Docker]
+    D --> D1[Pull Container Image]
+    D1 --> D2[Start Container]
+    D2 --> D3[Run Steps Inside Container]
+    
+    B -->|Service Containers| E[VM with Docker]
+    E --> E1[Start Service Containers]
+    E --> E2[Start Job Container]
+    E2 --> E3[Connect Services]
+    E3 --> E4[Run Steps]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style C fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style D fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+### Running Jobs in Containers
+
+Instead of installing dependencies on the runner VM, you can run the entire job inside a Docker container with everything pre-installed.
+
+#### Basic Container Job
+
+```yaml
+name: Container Job Example
+
+on: push
+
+jobs:
+  test-in-container:
+    runs-on: ubuntu-latest
+    
+    # Run this job inside a container
+    container:
+      image: node:18-alpine
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Node.js is already available (from container)
+      - name: Check Node version
+        run: node --version
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+```
+
+**Benefits:**
+
+- ✅ Consistent environment across all runs
+- ✅ Faster setup (no need to install dependencies)
+- ✅ Use specific tool versions from container
+- ✅ Better isolation
+
+#### Container with Custom Configuration
+
+```yaml
+jobs:
+  test-with-config:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: node:18
+      
+      # Environment variables for the container
+      env:
+        NODE_ENV: test
+        CI: true
+      
+      # Port mappings (container:host)
+      ports:
+        - 3000:3000
+        - 8080:8080
+      
+      # Volume mounts
+      volumes:
+        - my-volume:/volume-mount
+      
+      # Container options
+      options: >-
+        --cpus 2
+        --memory 4g
+        --health-cmd "node --version"
+        --health-interval 10s
+    
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+```
+
+#### Using Private Container Registries
+
+```yaml
+jobs:
+  test-private-image:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: ghcr.io/your-org/custom-image:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./run-tests.sh
+```
+
+---
+
+### Service Containers
+
+**Service containers** provide databases, caching services, or other dependencies needed for testing.
+
+#### Example: PostgreSQL Database
+
+```yaml
+name: Integration Tests with PostgreSQL
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    # Service containers run alongside the job
+    services:
+      postgres:
+        image: postgres:15
+        
+        # Environment variables for the service
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        
+        # Health check to ensure database is ready
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        
+        # Port mapping
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        run: npm run test:integration
+```
+
+#### Multiple Service Containers
+
+```yaml
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      # PostgreSQL database
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      # Redis cache
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      
+      # Elasticsearch
+      elasticsearch:
+        image: elasticsearch:8.11.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: false
+        options: >-
+          --health-cmd "curl http://localhost:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 9200:9200
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+          REDIS_URL: redis://localhost:6379
+          ELASTICSEARCH_URL: http://localhost:9200
+        run: npm run test:integration
+```
+
+#### Container Job with Service Containers
+
+```yaml
+jobs:
+  test-in-container:
+    runs-on: ubuntu-latest
+    
+    # Job runs in a container
+    container:
+      image: node:18
+    
+    # Services are accessible from the job container
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: --health-cmd pg_isready --health-interval 10s
+      
+      redis:
+        image: redis:7-alpine
+        options: --health-cmd "redis-cli ping" --health-interval 10s
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run tests
+        env:
+          # Use service name as hostname (Docker networking)
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+          REDIS_URL: redis://redis:6379
+        run: npm test
+```
+
+**Key Difference:** When using a container job, service hostnames are the service names (e.g., `postgres`, `redis`), not `localhost`.
+
+---
+
+### Building and Pushing Docker Images
+
+```yaml
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Set up Docker Buildx (advanced builder)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Login to container registry
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Extract metadata for tags and labels
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+      
+      # Build and push Docker image
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+          # Build arguments
+          build-args: |
+            NODE_VERSION=18
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+```
+
+---
+
+### Docker Best Practices for GitHub Actions
+
+#### Multi-Stage Builds
+
+```dockerfile
+# Dockerfile with multi-stage build
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine AS runtime
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
+USER node
+CMD ["node", "dist/index.js"]
+```
+
+```yaml
+# Use the optimized image in workflow
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: node:18-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+```
+
+#### Caching Docker Layers
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build with cache
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: myapp:latest
+          # GitHub Actions cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+```
+
+---
+
+## Building and Using Custom Actions
+
+Create reusable actions to share common functionality across workflows and repositories.
+
+### 📊 Action Types Overview
+
+```mermaid
+flowchart TD
+    A[GitHub Actions Types] --> B[JavaScript Actions]
+    A --> C[Docker Actions]
+    A --> D[Composite Actions]
+    
+    B --> B1[Run in Node.js runtime]
+    B --> B2[Fast execution]
+    B --> B3[All platforms]
+    B --> B4[Use: API calls, logic]
+    
+    C --> C1[Run in container]
+    C --> C2[Full environment control]
+    C --> C3[Any language]
+    C --> C4[Use: Complex tooling]
+    
+    D --> D1[Combine multiple steps]
+    D --> D2[No code required]
+    D --> D3[YAML only]
+    D --> D4[Use: Reusable workflows]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+### Action Types Comparison
+
+| Feature | **JavaScript Action** | **Docker Action** | **Composite Action** |
+|---------|----------------------|-------------------|---------------------|
+| **Language** | JavaScript/TypeScript | Any | YAML (shell commands) |
+| **Speed** | ⚡ Fast | 🐢 Slower (container startup) | ⚡ Fast |
+| **Platforms** | Linux, macOS, Windows | Linux only | All supported by steps |
+| **Complexity** | Medium | High | Low |
+| **Use Case** | API calls, logic | Custom environment | Combine existing actions |
+| **Dependencies** | npm packages | Anything in Docker | Actions + commands |
+
+---
+
+### Composite Actions
+
+**Composite actions** combine multiple workflow steps into a single reusable action using only YAML.
+
+#### Creating a Composite Action
+
+**File structure:**
+
+```
+.github/
+  actions/
+    setup-node-app/
+      action.yml
+```
+
+**`.github/actions/setup-node-app/action.yml`:**
+
+```yaml
+name: 'Setup Node.js Application'
+description: 'Checkout code, setup Node.js, and install dependencies'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: true
+    default: '18'
+  
+  cache-dependency-path:
+    description: 'Path to package-lock.json for caching'
+    required: false
+    default: '**/package-lock.json'
+
+outputs:
+  cache-hit:
+    description: 'Whether the cache was hit'
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+      id: cache
+    
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+    
+    - name: Display Node version
+      shell: bash
+      run: node --version
+```
+
+#### Using the Composite Action
+
+```yaml
+name: CI Pipeline
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Use the custom composite action
+      - uses: ./.github/actions/setup-node-app
+        with:
+          node-version: '18'
+      
+      # Dependencies are already installed
+      - name: Run tests
+        run: npm test
+      
+      - name: Build
+        run: npm run build
+```
+
+#### Advanced Composite Action
+
+**`.github/actions/deploy-app/action.yml`:**
+
+```yaml
+name: 'Deploy Application'
+description: 'Build and deploy application with notifications'
+
+inputs:
+  environment:
+    description: 'Deployment environment'
+    required: true
+  
+  api-key:
+    description: 'API key for deployment'
+    required: true
+  
+  slack-webhook:
+    description: 'Slack webhook for notifications'
+    required: false
+
+outputs:
+  deployment-url:
+    description: 'URL of the deployed application'
+    value: ${{ steps.deploy.outputs.url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build application
+      shell: bash
+      run: |
+        echo "Building for ${{ inputs.environment }}"
+        npm run build
+    
+    - name: Deploy
+      id: deploy
+      shell: bash
+      env:
+        API_KEY: ${{ inputs.api-key }}
+        ENVIRONMENT: ${{ inputs.environment }}
+      run: |
+        # Deployment logic here
+        DEPLOY_URL="https://${{ inputs.environment }}.example.com"
+        echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        echo "Deployed to: $DEPLOY_URL"
+    
+    - name: Send Slack notification
+      if: inputs.slack-webhook != ''
+      shell: bash
+      env:
+        SLACK_WEBHOOK: ${{ inputs.slack-webhook }}
+      run: |
+        curl -X POST $SLACK_WEBHOOK \
+          -H 'Content-Type: application/json' \
+          -d "{\"text\":\"✅ Deployed to ${{ inputs.environment }}\"}"
+```
+
+---
+
+### JavaScript Actions
+
+**JavaScript actions** run directly on the runner using Node.js, providing fast execution and full API access.
+
+#### Creating a JavaScript Action
+
+**File structure:**
+
+```
+.github/
+  actions/
+    hello-world/
+      action.yml
+      index.js
+      package.json
+```
+
+**`action.yml`:**
+
+```yaml
+name: 'Hello World'
+description: 'Greet someone and record the time'
+
+inputs:
+  who-to-greet:
+    description: 'Who to greet'
+    required: true
+    default: 'World'
+
+outputs:
+  time:
+    description: 'The time we greeted you'
+
+runs:
+  using: 'node20'
+  main: 'index.js'
+```
+
+**`package.json`:**
+
+```json
+{
+  "name": "hello-world-action",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^6.0.0"
+  }
+}
+```
+
+**`index.js`:**
+
+```javascript
+const core = require('@actions/core');
+const github = require('@actions/github');
+
+try {
+  // Get inputs
+  const nameToGreet = core.getInput('who-to-greet');
+  console.log(`Hello ${nameToGreet}!`);
+  
+  // Get current time
+  const time = new Date().toTimeString();
+  
+  // Set outputs
+  core.setOutput('time', time);
+  
+  // Access GitHub context
+  const payload = JSON.stringify(github.context.payload, undefined, 2);
+  console.log(`The event payload: ${payload}`);
+  
+  // Set environment variables
+  core.exportVariable('GREETING_TIME', time);
+  
+  // Add to path
+  core.addPath('/custom/path');
+  
+  // Create annotations
+  core.notice('This is a notice message');
+  core.warning('This is a warning');
+  
+} catch (error) {
+  core.setFailed(error.message);
+}
+```
+
+#### Using the JavaScript Action
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Hello world action
+        uses: ./.github/actions/hello-world
+        id: hello
+        with:
+          who-to-greet: 'GitHub Actions'
+      
+      - name: Get the output time
+        run: echo "The time was ${{ steps.hello.outputs.time }}"
+```
+
+#### Advanced JavaScript Action Example
+
+**API Integration Action:**
+
+```javascript
+const core = require('@actions/core');
+const github = require('@actions/github');
+
+async function run() {
+  try {
+    const token = core.getInput('github-token', { required: true });
+    const labelName = core.getInput('label-name', { required: true });
+    
+    // Create Octokit client
+    const octokit = github.getOctokit(token);
+    
+    // Get PR number
+    const pr_number = github.context.payload.pull_request?.number;
+    if (!pr_number) {
+      core.setFailed('This action only works on pull requests');
+      return;
+    }
+    
+    // Add label to PR
+    await octokit.rest.issues.addLabels({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      issue_number: pr_number,
+      labels: [labelName]
+    });
+    
+    core.info(`Added label '${labelName}' to PR #${pr_number}`);
+    core.setOutput('labeled', 'true');
+    
+  } catch (error) {
+    core.setFailed(`Action failed: ${error.message}`);
+  }
+}
+
+run();
+```
+
+---
+
+### Docker Container Actions
+
+**Docker actions** run in a container, allowing you to use any programming language and tools.
+
+#### Creating a Docker Action
+
+**File structure:**
+
+```
+.github/
+  actions/
+    python-analysis/
+      action.yml
+      Dockerfile
+      entrypoint.py
+      requirements.txt
+```
+
+**`action.yml`:**
+
+```yaml
+name: 'Python Code Analysis'
+description: 'Run Python code analysis with custom tools'
+
+inputs:
+  source-dir:
+    description: 'Directory containing Python source code'
+    required: true
+    default: '.'
+  
+  severity:
+    description: 'Minimum severity level to report'
+    required: false
+    default: 'medium'
+
+outputs:
+  issues-found:
+    description: 'Number of issues found'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.source-dir }}
+    - ${{ inputs.severity }}
+```
+
+**`Dockerfile`:**
+
+```dockerfile
+FROM python:3.11-slim
+
+# Install dependencies
+COPY requirements.txt /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
+
+# Copy action code
+COPY entrypoint.py /entrypoint.py
+
+# Make entrypoint executable
+RUN chmod +x /entrypoint.py
+
+ENTRYPOINT ["/entrypoint.py"]
+```
+
+**`entrypoint.py`:**
+
+```python
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+
+def main():
+    # Get inputs from command-line arguments
+    source_dir = sys.argv[1] if len(sys.argv) > 1 else '.'
+    severity = sys.argv[2] if len(sys.argv) > 2 else 'medium'
+    
+    print(f"Analyzing Python code in: {source_dir}")
+    print(f"Minimum severity: {severity}")
+    
+    # Run analysis (example: pylint)
+    result = subprocess.run(
+        ['pylint', source_dir],
+        capture_output=True,
+        text=True
+    )
+    
+    # Count issues
+    issues_found = result.stdout.count('warning') + result.stdout.count('error')
+    
+    # Set output using GitHub Actions environment file
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+        f.write(f"issues-found={issues_found}\n")
+    
+    print(f"Found {issues_found} issues")
+    
+    # Exit with appropriate code
+    if issues_found > 0:
+        print("::warning::Issues found in code analysis")
+        sys.exit(1)
+    else:
+        print("::notice::No issues found")
+        sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+```
+
+**`requirements.txt`:**
+
+```
+pylint==3.0.3
+```
+
+#### Using the Docker Action
+
+```yaml
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Python analysis
+        uses: ./.github/actions/python-analysis
+        with:
+          source-dir: './src'
+          severity: 'high'
+```
+
+---
+
+### Publishing Actions to GitHub Marketplace
+
+#### Prepare for Publishing
+
+1. **Create releases** with semantic versioning
+2. **Add comprehensive README**
+3. **Include LICENSE file**
+4. **Test thoroughly**
+
+**Example README structure:**
+
+```markdown
+# My Awesome Action
+
+Description of what your action does.
+
+## Usage
+
+```yaml
+- uses: username/my-awesome-action@v1
+  with:
+    input-parameter: 'value'
+```
+
+## Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `input-parameter` | Description | Yes | `default-value` |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `output-parameter` | Description |
+
+## Example Workflow
+
+Full example...
+```
+
+#### Publishing Process
+
+```yaml
+# Create a release workflow
+name: Publish Action
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+```
+
+Then mark repository as public action in **Settings** → Check "Publish this Action to the GitHub Marketplace"
+
+---
+
+## Security and Permissions
+
+Implementing security best practices protects your workflows, repositories, and infrastructure from vulnerabilities.
+
+### 📊 Security Layers Overview
+
+```mermaid
+flowchart TD
+    A[GitHub Actions Security] --> B[Token Permissions]
+    A --> C[Secret Management]
+    A --> D[Code Security]
+    A --> E[Runner Security]
+    
+    B --> B1[GITHUB_TOKEN scope]
+    B --> B2[Least privilege]
+    B --> B3[Read-only by default]
+    
+    C --> C1[Encrypted secrets]
+    C --> C2[Environment protection]
+    C --> C3[Secret scanning]
+    
+    D --> D1[Dependency scanning]
+    D --> D2[Code scanning]
+    D --> D3[Pin action versions]
+    
+    E --> E1[Self-hosted hardening]
+    E --> E2[Network isolation]
+    E --> E3[Audit logging]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style C fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style D fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+### GITHUB_TOKEN Permissions
+
+The **`GITHUB_TOKEN`** is automatically provided to workflows for authentication with GitHub APIs.
+
+#### Default Permissions
+
+By default, `GITHUB_TOKEN` has **permissive** access. You should restrict it.
+
+#### Setting Workflow-Level Permissions
+
+```yaml
+name: Secure Workflow
+
+on: push
+
+# Restrict default permissions for the entire workflow
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+```
+
+#### Setting Job-Level Permissions
+
+```yaml
+jobs:
+  read-only-job:
+    runs-on: ubuntu-latest
+    # This job can only read
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Read-only access"
+  
+  write-job:
+    runs-on: ubuntu-latest
+    # This job can write to PRs
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Automated comment from workflow'
+            })
+```
+
+#### Available Permission Scopes
+
+```yaml
+permissions:
+  actions: read|write|none           # Manage GitHub Actions
+  checks: read|write|none            # Manage check runs/suites
+  contents: read|write|none          # Repository contents
+  deployments: read|write|none       # Deployments
+  id-token: read|write|none          # OIDC token
+  issues: read|write|none            # Issues
+  discussions: read|write|none       # Discussions
+  packages: read|write|none          # GitHub Packages
+  pages: read|write|none             # GitHub Pages
+  pull-requests: read|write|none     # Pull requests
+  repository-projects: read|write|none  # Projects
+  security-events: read|write|none   # Security events
+  statuses: read|write|none          # Commit statuses
+```
+
+#### Least Privilege Example
+
+```yaml
+name: Minimal Permissions
+
+on:
+  pull_request:
+
+# Start with minimal permissions
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    # No permissions needed
+    permissions: {}
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm run lint
+  
+  test:
+    runs-on: ubuntu-latest
+    # Only read access
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+  
+  comment-results:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    # Only permission needed for this task
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ All checks passed!'
+            })
+```
+
+---
+
+### Securing Secrets
+
+#### Secret Best Practices
+
+```yaml
+name: Secure Secrets Usage
+
+on: push
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      # ✅ DO: Use secrets in env variables
+      - name: Deploy
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          # Secrets are automatically masked
+          ./deploy.sh
+      
+      # ❌ DON'T: Echo secrets
+      # - run: echo "${{ secrets.API_KEY }}"
+      
+      # ❌ DON'T: Pass secrets as command-line arguments
+      # - run: ./script.sh ${{ secrets.API_KEY }}
+      
+      # ✅ DO: Use secrets in action inputs (they're masked)
+      - uses: some-action@v1
+        with:
+          api-key: ${{ secrets.API_KEY }}
+```
+
+#### Rotating Secrets
+
+```yaml
+name: Secret Rotation Check
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # Monthly
+
+jobs:
+  check-secret-age:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if secrets need rotation
+        run: |
+          # Logic to check secret age
+          echo "::warning::Reminder to rotate production secrets"
+```
+
+#### Environment-Specific Secrets
+
+```yaml
+jobs:
+  deploy-dev:
+    environment: development
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          API_KEY: ${{ secrets.DEV_API_KEY }}
+        run: ./deploy.sh dev
+  
+  deploy-prod:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          API_KEY: ${{ secrets.PROD_API_KEY }}  # Different secret
+        run: ./deploy.sh prod
+```
+
+---
+
+### Dependency Security
+
+#### Pin Action Versions
+
+```yaml
+# ❌ DON'T: Use branches (can change)
+- uses: actions/checkout@main
+
+# ❌ DON'T: Use floating tags
+- uses: actions/checkout@v4
+
+# ✅ DO: Pin to specific SHA (immutable)
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+
+# ✅ BETTER: Use SHA with comment
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+```
+
+#### Dependabot for Actions
+
+**`.github/dependabot.yml`:**
+
+```yaml
+version: 2
+updates:
+  # Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+```
+
+#### Scanning Dependencies
+
+```yaml
+name: Dependency Scan
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Scan for vulnerabilities
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      # Upload to GitHub Security tab
+      - name: Upload scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+```
+
+---
+
+### Self-Hosted Runner Security
+
+#### Hardening Self-Hosted Runners
+
+```yaml
+# ❌ DON'T: Use self-hosted runners for public repositories
+# ❌ DON'T: Run self-hosted runners as root
+# ❌ DON'T: Share runners across multiple repositories (unless trusted)
+
+# ✅ DO: Use for private repositories only
+jobs:
+  secure-build:
+    runs-on: self-hosted
+    # Only run on specific labels
+    runs-on: [self-hosted, private, production]
+```
+
+#### Runner Security Checklist
+
+- ✅ Run runners in isolated environments
+- ✅ Use ephemeral (short-lived) runners when possible
+- ✅ Implement network segmentation
+- ✅ Enable audit logging
+- ✅ Regular security updates
+- ✅ Monitor runner activity
+- ✅ Use firewall rules
+- ✅ Disable unnecessary services
+
+---
+
+### Code Scanning
+
+#### CodeQL Analysis
+
+```yaml
+name: CodeQL Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ubuntu-latest
+    
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    strategy:
+      matrix:
+        language: ['javascript', 'python']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+      
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+```
+
+---
+
+### Security Best Practices Summary
+
+| Category | Best Practice | Implementation |
+|----------|--------------|----------------|
+| **Tokens** | Minimal permissions | `permissions: contents: read` |
+| **Secrets** | Environment-specific | Use environment secrets |
+| **Actions** | Pin versions | Use commit SHA |
+| **Dependencies** | Scan regularly | Trivy, Dependabot |
+| **Runners** | Isolate environment | Self-hosted hardening |
+| **Code** | Security scanning | CodeQL analysis |
+| **Audit** | Enable logging | GitHub audit log |
+| **Updates** | Stay current | Dependabot updates |
+
+---
+
+## Common Workflow Patterns
+
+### 📊 Common CI/CD Patterns
+
+#### **Visual examples of mono-repo, microservices, and deployment patterns**
+
+```mermaid
+flowchart TB
+    subgraph pat1 ["Pattern 1: Mono-repo"]
+        direction TB
+        M1[Trigger] --> M2{Path Filter}
+        M2 -->|frontend/** changed| M3[Build Frontend]
+        M2 -->|backend/** changed| M4[Build Backend]
+        M2 -->|shared/** changed| M5[Build Both]
+        M3 --> M6[Deploy Frontend]
+        M4 --> M7[Deploy Backend]
+        M5 --> M6
+        M5 --> M7
+    end
+    
+    subgraph pat2 ["Pattern 2: Microservices"]
+        direction TB
+        S1[Trigger] --> S2{Service Changed?}
+        S2 -->|service-a| S3[Build & Test A]
+        S2 -->|service-b| S4[Build & Test B]
+        S2 -->|service-c| S5[Build & Test C]
+        S3 --> S6[Deploy A]
+        S4 --> S7[Deploy B]
+        S5 --> S8[Deploy C]
+    end
+    
+    subgraph pat3 ["Pattern 3: Multi-Environment"]
+        direction TB
+        E1[Main Branch] --> E2[Build & Test]
+        E2 --> E3[Deploy Dev]
+        E3 --> E4{Auto Test Pass?}
+        E4 -->|Yes| E5[Deploy Staging]
+        E5 --> E6{Manual Approval}
+        E6 -->|Approved| E7[Deploy Production]
+    end
+    
+    style M1 fill:#e1f5ff,stroke:#0366d6
+    style S1 fill:#e1f5ff,stroke:#0366d6
+    style E1 fill:#e1f5ff,stroke:#0366d6
+    style E7 fill:#d4edda,stroke:#28a745,stroke-width:2px
+```
+
+#### Pattern 1: Mono-repo CI/CD
+
+**Use Case:** Multiple projects in one repository
+
+```yaml
+name: Mono-repo CI/CD
+
+on:
+  push:
+    branches: [main]
+    
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'packages/frontend/**'
+            backend:
+              - 'packages/backend/**'
+  
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --workspace=packages/frontend
+      - run: npm test --workspace=packages/frontend
+      - run: npm run build --workspace=packages/frontend
+  
+  build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --workspace=packages/backend
+      - run: npm test --workspace=packages/backend
+```
+
+#### Pattern 2: Microservices Deployment
+
+**Use Case:** Independent service deployment
+
+```yaml
+name: Microservices Deploy
+
+on:
+  push:
+    paths:
+      - 'services/**'
+
+jobs:
+  detect-service:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.services.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: services
+        run: |
+          # Detect which services changed
+          CHANGED=$(git diff --name-only HEAD^..HEAD | grep '^services/' | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=$CHANGED" >> $GITHUB_OUTPUT
+  
+  build-and-deploy:
+    needs: detect-service
+    if: needs.detect-service.outputs.services != '[]'
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.detect-service.outputs.services) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.service }}
+        run: docker build -t ${{ matrix.service }} ./services/${{ matrix.service }}
+      - name: Deploy ${{ matrix.service }}
+        run: echo "Deploying ${{ matrix.service }}"
+```
+
+#### Pattern 3: Multi-Environment Pipeline
+
+**Use Case:** Dev → Staging → Production flow
+
+```yaml
+name: Multi-Environment Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: dist/
+  
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.example.com
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: echo "Deploy to dev"
+  
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: echo "Deploy to staging"
+  
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://example.com
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: echo "Deploy to production"
+```
+
+#### Pattern 4: Feature Branch Preview
+
+**Use Case:** Deploy preview for each PR
+
+```yaml
+name: Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy preview
+        if: github.event.action != 'closed'
+        run: |
+          # Deploy to preview URL
+          PREVIEW_URL="https://pr-${{ github.event.number }}.preview.example.com"
+          echo "Deploying to $PREVIEW_URL"
+      
+      - name: Cleanup preview
+        if: github.event.action == 'closed'
+        run: |
+          echo "Cleaning up preview for PR ${{ github.event.number }}"
+      
+      - name: Comment PR
+        if: github.event.action != 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Preview deployed to https://pr-${{ github.event.number }}.preview.example.com'
+            })
+```
+
+---
+
+## Complete Workflow YAML Structure
+
+Here's a comprehensive example workflow with detailed explanations for each section:
+
+```yaml
+# Workflow name (appears in GitHub Actions UI)
+name: CI/CD Pipeline
+
+# Triggers: Define when this workflow runs
+on:
+  # Run on push to specific branches
+  push:
+    branches: 
+      - main
+      - develop
+    paths:
+      - 'src/**'        # Only trigger if files in src/ change
+      - 'package.json'
+    
+  # Run on pull requests targeting main
+  pull_request:
+    branches: 
+      - main
+    
+  # Scheduled runs (cron syntax)
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM UTC
+  
+  # Manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+# Environment variables available to all jobs
+env:
+  NODE_VERSION: '18'
+  DOCKER_REGISTRY: 'ghcr.io'
+
+# Define the jobs
+jobs:
+  # Job 1: Build and Test
+  build:
+    # Job name displayed in UI
+    name: Build and Test Application
+    
+    # Runner environment
+    runs-on: ubuntu-latest
+    
+    # Job-level environment variables
+    env:
+      CI: true
+    
+    # Job outputs that other jobs can use
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    
+    # Sequential steps within this job
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches
+      
+      # Step 2: Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'  # Cache npm dependencies
+      
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci  # ci is faster and more reliable for CI
+      
+      # Step 4: Run linting
+      - name: Lint code
+        run: npm run lint
+        continue-on-error: false  # Fail job if linting fails
+      
+      # Step 5: Run tests
+      - name: Run tests
+        run: npm test -- --coverage
+        env:
+          NODE_ENV: test
+      
+      # Step 6: Upload coverage reports
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          fail_ci_if_error: true
+      
+      # Step 7: Build the application
+      - name: Build application
+        run: npm run build
+      
+      # Step 8: Get version for other jobs
+      - name: Get version
+        id: get_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      
+      # Step 9: Upload build artifacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+  
+  # Job 2: Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    # Run in parallel with build job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  # Job 3: Docker Build
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [build, security]  # Wait for both jobs to complete
+    
+    # Only run on main branch
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Download artifacts from build job
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  
+  # Job 4: Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: docker
+    environment: 
+      name: staging
+      url: https://staging.example.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to staging server
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }}"
+          # Add your deployment script here
+        env:
+          DEPLOY_KEY: ${{ secrets.STAGING_DEPLOY_KEY }}
+      
+      - name: Run smoke tests
+        run: |
+          # Add health check or smoke test commands
+          curl --retry 5 --retry-delay 10 https://staging.example.com/health
+  
+  # Job 5: Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment:
+      name: production
+      url: https://example.com
+    
+    # Only deploy to production on manual approval
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production"
+          # Add production deployment script
+        env:
+          DEPLOY_KEY: ${{ secrets.PRODUCTION_DEPLOY_KEY }}
+      
+      - name: Notify team
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+---
+
+## Best Practices
+
+1. **Use specific action versions**: `actions/checkout@v4` (not `@main`)
+2. **Cache dependencies**: Speed up workflows with caching
+3. **Fail fast**: Use `continue-on-error: false` for critical steps
+4. **Use secrets**: Never hardcode credentials
+5. **Limit concurrency**: Prevent multiple deployments
+6. **Use environments**: Add protection rules for production
+7. **Keep workflows DRY**: Use reusable workflows and composite actions
+8. **Monitor usage**: Check action minutes and storage
+
+### 📊 Best Practices Checklist
+
+#### **Workflow Optimization Tips**
+
+```mermaid
+flowchart TD
+    A[GitHub Actions Best Practices] --> B[Security]
+    A --> C[Performance]
+    A --> D[Maintainability]
+    A --> E[Cost Optimization]
+    
+    B --> B1[✓ Use specific action versions]
+    B --> B2[✓ Secure secrets properly]
+    B --> B3[✓ Limit permissions GITHUB_TOKEN]
+    B --> B4[✓ Pin dependencies]
+    
+    C --> C1[✓ Cache dependencies]
+    C --> C2[✓ Parallelize jobs]
+    C --> C3[✓ Use matrix strategy]
+    C --> C4[✓ Optimize Docker layers]
+    
+    D --> D1[✓ Use reusable workflows]
+    D --> D2[✓ Document workflows]
+    D --> D3[✓ Keep workflows DRY]
+    D --> D4[✓ Use composite actions]
+    
+    E --> E1[✓ Path filters to skip builds]
+    E --> E2[✓ Cancel redundant runs]
+    E --> E3[✓ Use self-hosted for heavy]
+    E --> E4[✓ Set job timeouts]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+```
+
+**Best Practices Checklist:**
+
+#### 🔒 Security
+
+```yaml
+# ✅ DO: Use specific versions
+- uses: actions/checkout@v4
+
+# ❌ DON'T: Use branches (can change)
+- uses: actions/checkout@main
+
+# ✅ DO: Limit permissions
+permissions:
+  contents: read
+  pull-requests: write
+
+# ✅ DO: Use secrets for credentials
+env:
+  API_KEY: ${{ secrets.API_KEY }}
+
+# ❌ DON'T: Hardcode credentials
+env:
+  API_KEY: "abc123xyz"
+```
+
+#### ⚡ Performance
+
+```yaml
+# ✅ Cache dependencies
+- uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+# ✅ Parallelize independent jobs
+jobs:
+  test:
+    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-latest  # Runs in parallel with test
+
+# ✅ Use matrix for multiple versions
+strategy:
+  matrix:
+    node: [16, 18, 20]
+    os: [ubuntu-latest, windows-latest]
+
+# ✅ Fail fast for quick feedback
+strategy:
+  fail-fast: true
+```
+
+#### 🛠️ Maintainability
+
+```yaml
+# ✅ Use reusable workflows
+jobs:
+  call-workflow:
+    uses: ./.github/workflows/reusable.yml
+
+# ✅ Create composite actions for repeated steps
+- uses: ./.github/actions/setup-environment
+  with:
+    node-version: 18
+
+# ✅ Add clear names and documentation
+- name: Install dependencies and build
+  run: npm ci && npm run build
+  # This step prepares the application for deployment
+```
+
+#### 💰 Cost Optimization
+
+```yaml
+# ✅ Use path filters to skip unnecessary runs
+on:
+  push:
+    paths:
+      - 'src/**'
+      - '!docs/**'
+
+# ✅ Cancel redundant workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ✅ Set reasonable timeouts
+jobs:
+  build:
+    timeout-minutes: 10
+
+# ✅ Use self-hosted runners for high-volume
+jobs:
+  heavy-build:
+    runs-on: self-hosted
+```
+
+#### 🎯 Additional Tips
+
+| Practice | Description | Example |
+|----------|-------------|---------|
+| **Conditional steps** | Skip unnecessary steps | `if: github.event_name == 'push'` |
+| **Continue on error** | Don't fail entire job | `continue-on-error: true` |
+| **Environment protection** | Add manual approval | `environment: production` |
+| **Artifacts retention** | Clean up old artifacts | `retention-days: 7` |
+| **Job outputs** | Share data between jobs | `outputs: version: ${{ steps.x.outputs.version }}` |
+| **Workflow triggers** | Be specific with events | `on: pull_request: types: [opened]` |
+| **Debug logging** | Enable when needed | `ACTIONS_STEP_DEBUG: true` |
+
+---
+
 ## Next Steps
 
+Now that you've learned the fundamentals and advanced features of GitHub Actions, continue exploring:
+
 - Creating reusable workflows
-- Advanced GitHub Actions features
-- Integrating with external services
+- Advanced GitHub Actions features (matrix strategies, dynamic matrices)
+- Integrating with external services (AWS, Azure, GCP)
 - Monitoring and debugging workflows
+- Performance optimization
+- Enterprise features and administration

@@ -161,6 +161,19 @@ Working Directory  →  Staging Area  →  Repository
 * **Staging Area (Index):** Where you prepare files for commit
 * **Repository (.git directory):** Where Git stores committed snapshots
 
+### Visual Workflow
+
+```mermaid
+gitGraph
+    commit id: "Initial commit"
+    commit id: "Add feature A"
+    commit id: "Fix bug in A"
+    commit id: "Add feature B"
+    commit id: "Update documentation"
+```
+
+The diagram above shows how commits build upon each other in a linear history. Each commit represents a snapshot saved in the repository after changes have moved through: **Working Directory** → `git add` → **Staging Area** → `git commit` → **Repository**.
+
 ---
 
 ## 📝 Basic Git Operations
@@ -346,6 +359,29 @@ git diff --word-diff
 
 Branches allow you to diverge from the main line of development and work independently.
 
+### Visual: Basic Branching and Merging
+
+```mermaid
+gitGraph
+    commit id: "Initial commit"
+    commit id: "Add main feature"
+    branch feature-branch
+    checkout feature-branch
+    commit id: "Start feature"
+    commit id: "Complete feature"
+    checkout main
+    commit id: "Hotfix on main"
+    merge feature-branch
+    commit id: "Continue development"
+```
+
+This diagram shows:
+
+1. Creating a new branch (`feature-branch`) from `main`
+2. Making commits on the feature branch
+3. Meanwhile, `main` continues with its own commits
+4. Merging the feature branch back into `main`
+
 ```bash
 # List all local branches
 git branch
@@ -417,6 +453,29 @@ git merge --abort
 ```
 
 ### Handling Merge Conflicts
+
+When Git cannot automatically merge changes, you need to resolve conflicts manually.
+
+### Visual: How Merge Conflicts Occur
+
+```mermaid
+gitGraph
+    commit id: "Initial"
+    commit id: "Add user.txt"
+    branch feature
+    checkout feature
+    commit id: "Edit user.txt line 5" type: HIGHLIGHT
+    checkout main
+    commit id: "Edit user.txt line 5" type: REVERSE
+    merge feature tag: "CONFLICT!"
+    commit id: "Resolved conflict"
+```
+
+This diagram shows a conflict scenario:
+
+* Both `main` and `feature` branches modified the same line in `user.txt`
+* When merging, Git cannot decide which change to keep
+* You must manually resolve the conflict before completing the merge
 
 ```bash
 # When conflict occurs:
@@ -584,6 +643,54 @@ git stash clear
 **⚠️ Important Note:** Rebasing can be dangerous. If you are not confident with Git, do not use **rebasing**.
 
 Rebasing rewrites commit history by moving commits to a new base.
+
+### Visual: Merge vs Rebase
+
+**Before (Common History):**
+
+```mermaid
+gitGraph
+    commit id: "A"
+    commit id: "B"
+    branch feature
+    checkout feature
+    commit id: "C"
+    commit id: "D"
+    checkout main
+    commit id: "E"
+    commit id: "F"
+```
+
+**After Merge (Creates merge commit):**
+
+```mermaid
+gitGraph
+    commit id: "A"
+    commit id: "B"
+    branch feature
+    checkout feature
+    commit id: "C"
+    commit id: "D"
+    checkout main
+    commit id: "E"
+    commit id: "F"
+    merge feature
+    commit id: "Continue..."
+```
+
+**After Rebase (Linear history):**
+
+```mermaid
+gitGraph
+    commit id: "A"
+    commit id: "B"
+    commit id: "E"
+    commit id: "F"
+    commit id: "C'"
+    commit id: "D'"
+```
+
+Notice how rebase replays commits C and D on top of F, creating new commits C' and D' with different commit hashes. This is why it's dangerous for shared branches!
 
 ### Why Rebasing Can Be Dangerous
 
@@ -1258,6 +1365,32 @@ git merge origin/main
 
 ### Working with Forks
 
+Forking creates a personal copy of someone else's repository on GitHub. This is the standard workflow for contributing to open-source projects.
+
+### Visual: Fork Workflow
+
+```mermaid
+gitGraph
+    commit id: "upstream/main: A"
+    commit id: "upstream/main: B"
+    branch origin/main
+    checkout origin/main
+    commit id: "Fork created" type: HIGHLIGHT
+    branch feature
+    checkout feature
+    commit id: "Your feature: C"
+    commit id: "Your feature: D"
+    checkout origin/main
+    merge feature tag: "Ready for PR"
+```
+
+This diagram represents:
+
+* **Top line:** Original repository (upstream)
+* **Middle line:** Your forked repository (origin)
+* **Bottom line:** Your feature branch where you make changes
+* After completing your feature, you push to your fork and create a PR to upstream
+
 ```bash
 # 1. Fork repository on GitHub web interface
 
@@ -1285,6 +1418,38 @@ git push origin main
 ## 🔀 GitHub Pull Request Workflow
 
 ### Creating a Pull Request
+
+A Pull Request (PR) is a GitHub feature that lets you propose changes to a repository and request that they be reviewed and merged.
+
+### Visual: Complete PR Workflow
+
+```mermaid
+gitGraph
+    commit id: "main: Start"
+    commit id: "main: Stable"
+    branch feature/new-feature
+    checkout feature/new-feature
+    commit id: "Add feature part 1"
+    commit id: "Add feature part 2"
+    commit id: "Add tests"
+    checkout main
+    commit id: "Other changes"
+    checkout feature/new-feature
+    merge main tag: "Update from main"
+    commit id: "Address review comments"
+    checkout main
+    merge feature/new-feature tag: "PR Merged!"
+    commit id: "Continue development"
+```
+
+This workflow shows:
+
+1. Create a feature branch from `main`
+2. Make commits on your feature branch
+3. Optionally update your branch with latest `main` changes
+4. Address code review feedback with additional commits
+5. After approval, merge the PR into `main`
+6. Delete the feature branch and continue development
 
 ```bash
 # 1. Create feature branch
