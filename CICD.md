@@ -3207,7 +3207,7 @@ flowchart TD
 
 **File structure:**
 
-```
+```bash
 .github/
   actions/
     setup-node-app/
@@ -3351,7 +3351,7 @@ runs:
 
 **File structure:**
 
-```
+```bash
 .github/
   actions/
     hello-world/
@@ -3606,7 +3606,7 @@ if __name__ == '__main__':
 
 **`requirements.txt`:**
 
-```
+```dockerfile
 pylint==3.0.3
 ```
 
@@ -3640,11 +3640,11 @@ jobs:
 **Example README structure:**
 
 ```markdown
-# My Awesome Action
+##### My Awesome Action
 
 Description of what your action does.
 
-## Usage
+##### Usage
 
 ```yaml
 - uses: username/my-awesome-action@v1
@@ -3652,22 +3652,21 @@ Description of what your action does.
     input-parameter: 'value'
 ```
 
-## Inputs
+##### Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `input-parameter` | Description | Yes | `default-value` |
 
-## Outputs
+##### Outputs
 
 | Output | Description |
 |--------|-------------|
 | `output-parameter` | Description |
 
-## Example Workflow
+##### Example Workflow
 
-Full example...
-```
+Full example... [to be posted]
 
 #### Publishing Process
 
