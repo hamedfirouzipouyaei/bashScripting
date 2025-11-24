@@ -1,5 +1,70 @@
 # 🧨 CUDA Parallel Programming Cheat Sheet
 
+## 📋 Table of Contents
+
+- [🧨 CUDA Parallel Programming Cheat Sheet](#-cuda-parallel-programming-cheat-sheet)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [📌 Introduction to NVIDIA GPUs](#-introduction-to-nvidia-gpus)
+    - [🌀 The Evolution of NVIDIA Graphics Processing Units](#-the-evolution-of-nvidia-graphics-processing-units)
+    - [🏛️ GPU Architecture Generations](#️-gpu-architecture-generations)
+      - [🗓 Architecture Timeline](#-architecture-timeline)
+    - [💡 Major Architecture Innovations](#-major-architecture-innovations)
+      - [⚡ Tesla Architecture (2006-2009)](#-tesla-architecture-2006-2009)
+      - [⚛ Fermi Architecture (2010-2012)](#-fermi-architecture-2010-2012)
+      - [🔭 Kepler Architecture (2012-2014)](#-kepler-architecture-2012-2014)
+      - [〽️ Maxwell Architecture (2014-2016)](#️-maxwell-architecture-2014-2016)
+      - [🦎 Pascal Architecture (2016-2018)](#-pascal-architecture-2016-2018)
+      - [🔌 Volta Architecture (2017-2019)](#-volta-architecture-2017-2019)
+      - [🌀 Turing Architecture (2018-2020)](#-turing-architecture-2018-2020)
+      - [🔋 Ampere Architecture (2020-2022)](#-ampere-architecture-2020-2022)
+      - [🦗 Hopper Architecture (2022-Present)](#-hopper-architecture-2022-present)
+      - [🕳️ Blackwell Architecture (2024-Present)](#️-blackwell-architecture-2024-present)
+    - [GPU Product Lines](#gpu-product-lines)
+    - [Compute Capability Comparison](#compute-capability-comparison)
+    - [Memory Technology Evolution](#memory-technology-evolution)
+    - [Performance Trends Across Generations](#performance-trends-across-generations)
+    - [Choosing the Right GPU for CUDA Development](#choosing-the-right-gpu-for-cuda-development)
+      - [For Learning \& Development](#for-learning--development)
+      - [For Professional/Research Work](#for-professionalresearch-work)
+      - [For Production/Enterprise](#for-productionenterprise)
+    - [Key Considerations](#key-considerations)
+  - [💾 Installing CUDA and Other Required Programs](#-installing-cuda-and-other-required-programs)
+    - [Prerequisites](#prerequisites)
+    - [Linux Installation](#linux-installation)
+      - [Ubuntu/Debian](#ubuntudebian)
+      - [RHEL/CentOS/Fedora](#rhelcentosfedora)
+    - [Windows Installation](#windows-installation)
+    - [Essential Development Tools](#essential-development-tools)
+      - [CMake (Build System)](#cmake-build-system)
+      - [CUDA Samples](#cuda-samples)
+      - [cuDNN (Deep Learning Library)](#cudnn-deep-learning-library)
+      - [NCCL (Multi-GPU Communication)](#nccl-multi-gpu-communication)
+      - [Nsight Tools (Profiling and Debugging)](#nsight-tools-profiling-and-debugging)
+    - [Version Compatibility](#version-compatibility)
+    - [Verification Script](#verification-script)
+  - [📢 Introduction to CUDA](#-introduction-to-cuda)
+    - [What is CUDA?](#what-is-cuda)
+    - [CPU vs GPU Architecture](#cpu-vs-gpu-architecture)
+    - [CUDA Programming Model](#cuda-programming-model)
+      - [Host vs Device Architecture](#host-vs-device-architecture)
+      - [Key Concepts](#key-concepts)
+        - [**1. Host: The CPU and its memory (host memory)**](#1-host-the-cpu-and-its-memory-host-memory)
+        - [**2. Device: The GPU and its memory (device memory)**](#2-device-the-gpu-and-its-memory-device-memory)
+        - [**3. Kernel: Function that runs on the GPU**](#3-kernel-function-that-runs-on-the-gpu)
+        - [**4. Thread: Basic unit of parallel execution**](#4-thread-basic-unit-of-parallel-execution)
+        - [**5. Block: Group of threads that can cooperate**](#5-block-group-of-threads-that-can-cooperate)
+        - [**6. Grid: Collection of blocks**](#6-grid-collection-of-blocks)
+      - [Thread Block Scheduling: The GigaThread Engine](#thread-block-scheduling-the-gigathread-engine)
+        - [**Visual Example: Block Distribution**](#visual-example-block-distribution)
+      - [GPU Hardware Architecture](#gpu-hardware-architecture)
+        - [**1. GPU Die (Complete Chip)**](#1-gpu-die-complete-chip)
+        - [**2. Streaming Multiprocessor (SM)**](#2-streaming-multiprocessor-sm)
+        - [**3. Processing Block (Sub-partition within SM)**](#3-processing-block-sub-partition-within-sm)
+        - [**4. Warp Execution and Scheduling Within SM**](#4-warp-execution-and-scheduling-within-sm)
+        - [**5. Memory Hierarchy:**](#5-memory-hierarchy)
+
+---
+
 ## 📌 Introduction to NVIDIA GPUs
 
 ### 🌀 The Evolution of NVIDIA Graphics Processing Units
@@ -362,6 +427,36 @@ echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
 **CUDA (Compute Unified Device Architecture)** is NVIDIA's parallel computing platform and programming model that enables dramatic increases in computing performance by harnessing the power of GPUs.
 
+📢 Some Important Notes:
+
+- CUDA is based on the `C` programming language.
+- The CUDA Compiler is called `NVCC`, and it's more than just a compiler that converts CUDA code to machine code. We briefly touch upon each component in the diagram below:
+
+```mermaid
+graph TB
+    Source[".cu file<br/><b>C/C++ and CUDA code</b>"]
+    
+    Source --> NVCC["<b>NVIDIA CUDA Compiler (NVCC)</b>"]
+    
+    NVCC --> HostCode["Host C/C++ Code<br/>.c"]
+    NVCC --> DeviceCode["PTX Virtual ISA code<br/>.ptx"]
+    
+    HostCode --> HostCompiler["Host C/C++ Compiler"]
+    HostCompiler --> HostAsm["Host Assembly<br/>(e.g., x86, Power, ARM)"]
+    HostAsm --> CPU[("CPU")]
+    
+    DeviceCode --> JIT["Device Just-in-Time<br/>Compiler"]
+    JIT --> DeviceAsm["Device Assembly<br/>(e.g., SASS)"]
+    DeviceAsm --> GPU[("GPU")]
+    
+    style Source fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style NVCC fill:#e1f5ff,stroke:#333,stroke-width:3px
+    style HostCode fill:#f5e6d3,stroke:#333,stroke-width:2px
+    style DeviceCode fill:#d4edda,stroke:#333,stroke-width:2px
+    style CPU fill:#d4a574,stroke:#333,stroke-width:3px
+    style GPU fill:#7cb342,stroke:#333,stroke-width:3px
+```
+
 ### CPU vs GPU Architecture
 
 | Aspect | CPU | GPU |
@@ -376,1747 +471,502 @@ echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
 ### CUDA Programming Model
 
+CUDA's programming model is built around the concept of **heterogeneous computing**, where both the CPU (host) and GPU (device) work together to execute a program. Understanding the relationship between these components is fundamental to CUDA programming.
+
+#### Host vs Device Architecture
+
+```mermaid
+graph TB
+    subgraph Host["<b>Host (CPU)</b>"]
+        DRAM["DRAM<br/>(Host Memory)"]
+        CPU["CPU<br/>Few powerful cores<br/>Complex control logic"]
+        MainCode["Main Program Code<br/>• Sequential execution<br/>• Memory management<br/>• Kernel launches"]
+    end
+    
+    subgraph Device["<b>Device (GPU)</b>"]
+        GDRAM["GDRAM/HBM<br/>(Device Memory)"]
+        GPU["NVIDIA GPU<br/>Thousands of cores<br/>Parallel execution"]
+        KernelCode["GPU Kernel Code<br/>• Parallel execution<br/>• Data processing<br/>• Thread operations"]
+    end
+    
+    CPU <-->|"PCIe Bus<br/>(Data Transfer)"| GPU
+    DRAM <--> CPU
+    GDRAM <--> GPU
+    MainCode -.->|"Controls"| CPU
+    KernelCode -.->|"Executes on"| GPU
+    
+    style Host fill:#f9e6e6,stroke:#8b4513,stroke-width:3px
+    style Device fill:#e6f3e6,stroke:#2d5016,stroke-width:3px
+    style CPU fill:#d4a574,stroke:#333,stroke-width:2px
+    style GPU fill:#7cb342,stroke:#333,stroke-width:2px
+    style DRAM fill:#ffcccc,stroke:#333,stroke-width:2px
+    style GDRAM fill:#ccffcc,stroke:#333,stroke-width:2px
+    style MainCode fill:#ffe6cc,stroke:#333,stroke-width:2px
+    style KernelCode fill:#ffcccc,stroke:#333,stroke-width:2px
+```
+
 #### Key Concepts
 
-1. **Host**: The CPU and its memory (host memory)
-2. **Device**: The GPU and its memory (device memory)
-3. **Kernel**: Function that runs on the GPU
-4. **Thread**: Basic unit of parallel execution
-5. **Block**: Group of threads that can cooperate
-6. **Grid**: Collection of blocks
+##### **1. Host: The CPU and its memory (host memory)**
 
-### CUDA Execution Model
+- The **host** refers to the CPU and the system's main memory (DRAM)
+- Executes the main program code sequentially
+- Responsible for:
+  - Allocating memory on both host and device
+  - Transferring data between host and device
+  - Launching kernels (GPU functions)
+  - Managing overall program flow
+
+##### **2. Device: The GPU and its memory (device memory)**
+
+- The **device** refers to the GPU and its dedicated memory (GDRAM/HBM)
+- Designed for massive parallel execution
+- Characteristics:
+  - Thousands of cores executing simultaneously
+  - High memory bandwidth for data-intensive operations
+  - Optimized for throughput over latency
+  - Executes kernel functions launched by the host
+
+##### **3. Kernel: Function that runs on the GPU**
+
+- A **kernel** is a special function that executes on the device (GPU)
+- Written with `__global__` qualifier in CUDA
+- Launched by the host but runs on the device
+- Multiple instances run in parallel across many GPU threads
+- Example: `kernel<<<blocks, threads>>>(arguments);`
+
+##### **4. Thread: Basic unit of parallel execution**
+
+- A **thread** is the smallest unit of execution in CUDA
+- Each thread executes the same kernel code but on different data
+- Threads have unique IDs to identify which data to process
+- Millions of threads can execute concurrently on modern GPUs
+- Lightweight compared to CPU threads
+
+##### **5. Block: Group of threads that can cooperate**
+
+- A **block** is a group of threads that execute together
+- Threads within a block can:
+  - Synchronize using `__syncthreads()`
+  - Share data through shared memory
+  - Coordinate their execution
+- Block size typically ranges from 32 to 1024 threads
+- All threads in a block run on the same Streaming Multiprocessor (SM)
+
+##### **6. Grid: Collection of blocks**
+
+- A **grid** is the complete set of blocks launched for a kernel
+- Blocks within a grid execute independently
+- No synchronization or communication between blocks (by design)
+- Grid dimensions can be 1D, 2D, or 3D for convenience
+- Total threads = (threads per block) × (blocks in grid)
+
+**CUDA Thread Hierarchy Visualization:**
+
+```mermaid
+classDiagram
+    class Grid {
+        +dimensions: (x, y, z)
+        +totalBlocks: x * y * z
+        +launch() kernel
+        Contains multiple Blocks
+    }
+    
+    class Block {
+        +blockIdx: (x, y, z)
+        +blockDim: (x, y, z)
+        +totalThreads: x * y * z
+        +sharedMemory
+        +syncthreads()
+        Threads cooperate here
+    }
+    
+    class Thread {
+        +threadIdx: (x, y, z)
+        +globalID: unique
+        +registers
+        +execute() kernel code
+        Smallest execution unit
+    }
+    
+    class SM_StreamingMultiprocessor {
+        +multiple warps
+        +sharedMemory: 64-128KB
+        +L1Cache
+        +registerFile
+        Executes Blocks
+    }
+    
+    class Warp {
+        +32 threads
+        +SIMT execution
+        +warpID
+        Lockstep execution
+    }
+    
+    Grid "1" *-- "many" Block : contains
+    Block "1" *-- "many" Thread : contains
+    SM_StreamingMultiprocessor "1" o-- "many" Block : executes
+    Block "1" *-- "many" Warp : grouped into
+    Warp "1" *-- "32" Thread : contains
+    
+    note for Grid "Launched by host\nkernel<<<grid, block>>>()"
+    note for Block "Max 1024 threads per block\nAll threads share memory"
+    note for Thread "Has unique IDs:\nthreadIdx, blockIdx"
+    note for Warp "Hardware execution unit\n32 threads in lockstep"
+```
+
+**Thread Hierarchy Breakdown:**
+
+| Level | Description | Typical Size | Can Synchronize? |
+|-------|-------------|--------------|------------------|
+| **Grid** | All blocks launched for a kernel | 1000s - 1000000s blocks | ❌ No |
+| **Block** | Group of cooperating threads | 32 - 1024 threads | ✅ Yes (`__syncthreads()`) |
+| **Warp** | Hardware execution unit | 32 threads (fixed) | ✅ Implicit (lockstep) |
+| **Thread** | Individual execution instance | 1 thread | N/A |
+
+#### Thread Block Scheduling: The GigaThread Engine
+
+When you launch a CUDA kernel, the **GigaThread Engine** (hardware scheduler) is responsible for distributing thread blocks across available Streaming Multiprocessors (SMs). This is a critical aspect of CUDA's execution model.
+
+**How Block Distribution Works:**
+
+```mermaid
+sequenceDiagram
+    participant Host as Host (CPU)
+    participant GTE as GigaThread Engine
+    participant SM1 as SM 1
+    participant SM2 as SM 2
+    participant SM3 as SM 3
+    participant SMN as SM N
+    
+    Host->>GTE: Launch Kernel<<<Grid(1000 blocks), Block(256 threads)>>>
+    Note over GTE: Hardware Scheduler<br/>Distributes blocks dynamically
+    
+    GTE->>SM1: Assign Block 0, Block 4, Block 8...
+    GTE->>SM2: Assign Block 1, Block 5, Block 9...
+    GTE->>SM3: Assign Block 2, Block 6, Block 10...
+    GTE->>SMN: Assign Block 3, Block 7, Block 11...
+    
+    Note over SM1,SMN: Each SM executes assigned blocks<br/>independently and in parallel
+    
+    SM1-->>GTE: Block 0 complete
+    GTE->>SM1: Assign next available block
+    
+    SM2-->>GTE: Block 1 complete
+    GTE->>SM2: Assign next available block
+    
+    Note over GTE: Process continues until<br/>all blocks complete
+    
+    GTE-->>Host: Kernel execution complete
+```
+
+**Key Concepts:**
+
+1. **GigaThread Engine (Hardware Scheduler)**
+   - Built-in hardware component in the GPU
+   - Automatically distributes thread blocks to available SMs
+   - Dynamic scheduling: as SMs complete blocks, new blocks are assigned
+   - No programmer intervention needed
+   - Ensures load balancing across all SMs
+
+2. **Block Assignment Rules**
+   - Each block is assigned to **exactly one SM**
+   - An SM can execute **multiple blocks concurrently** (if resources allow)
+   - Blocks execute **independently** - no inter-block communication
+   - Once assigned, a block runs to completion on that SM
+   - Assignment is transparent to the programmer
+
+3. **Resource Constraints**
+   - Number of blocks per SM limited by:
+     - **Shared memory** per block vs available shared memory
+     - **Registers** per thread vs available registers
+     - **Max threads** per SM (e.g., 2048 threads on modern GPUs)
+     - **Max blocks** per SM (e.g., 16-32 blocks depending on architecture)
+
+4. **Execution Example**
+
+   ```cpp
+   // Launch kernel with 1000 blocks of 256 threads each
+   myKernel<<<1000, 256>>>(data);
+   
+   // On a GPU with 80 SMs:
+   // - GigaThread Engine assigns ~12-13 blocks per SM initially
+   // - As blocks complete, engine assigns remaining blocks
+   // - Total: 1000 blocks × 256 threads = 256,000 threads
+   ```
+
+##### **Visual Example: Block Distribution**
 
 ```yaml
-Grid (Kernel Launch)
-├── Block (0,0)
-│   ├── Thread (0,0)
-│   ├── Thread (0,1)
-│   └── ...
-├── Block (0,1)
-│   └── Threads...
-└── ...
+GPU with 4 SMs executing a kernel with 12 thread blocks:
+
+Initial Assignment (GigaThread Engine):
+┌─────────┬─────────┬─────────┬─────────┐
+│  SM 0   │  SM 1   │  SM 2   │  SM 3   │
+├─────────┼─────────┼─────────┼─────────┤
+│ Block 0 │ Block 1 │ Block 2 │ Block 3 │
+│ Block 4 │ Block 5 │ Block 6 │ Block 7 │
+│ Block 8 │ Block 9 │ Block10 │ Block11 │
+└─────────┴─────────┴─────────┴─────────┘
+
+Each SM processes its assigned blocks independently.
+Blocks within an SM may execute concurrently (if resources permit).
 ```
 
-#### Thread Hierarchy
+**Why This Matters for Performance:**
 
-| Level | Index Variables | Dimensions | Max Size |
-|-------|----------------|------------|----------|
-| **Thread** | `threadIdx.x/y/z` | 1D, 2D, 3D | 1024 threads/block |
-| **Block** | `blockIdx.x/y/z` | 1D, 2D, 3D | Device specific (65535+) |
-| **Grid** | - | 1D, 2D, 3D | Kernel-wide |
+- **Scalability**: Same code runs efficiently on GPUs with different SM counts
+- **Load Balancing**: Automatic distribution ensures all SMs stay busy
+- **No Manual Scheduling**: Programmer writes block-level code, hardware handles distribution
+- **Block Independence**: Allows GPU to schedule blocks flexibly without dependencies
 
-### Basic CUDA Program Structure
+**Occupancy Consideration:**
 
-```cuda
-// 1. Include headers
-#include <cuda_runtime.h>
-#include <stdio.h>
+```yaml
+If each block needs too many resources:
+- Few blocks fit per SM → Low occupancy → Poor performance
+- Example: Block needs 64KB shared memory, SM has 96KB
+  → Only 1 block per SM → Other resources underutilized
 
-// 2. Define kernel (runs on GPU)
-__global__ void vectorAdd(float *a, float *b, float *c, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
-        c[idx] = a[idx] + b[idx];
-    }
-}
+Optimal design:
+- Moderate resource usage per block
+- Allows multiple blocks per SM
+- Higher occupancy → Better latency hiding → Better performance
+```
 
-// 3. Host code (runs on CPU)
-int main() {
-    int n = 1000000;
-    size_t bytes = n * sizeof(float);
+#### GPU Hardware Architecture
+
+Understanding the physical structure of a GPU is essential for writing efficient CUDA code. Modern NVIDIA GPUs are organized hierarchically with multiple Streaming Multiprocessors (SMs), each containing multiple processing units.
+
+```mermaid
+graph TB
+    GPU["<b>GPU DIE</b><br/>Complete Graphics Processing Unit"]
     
-    // Allocate host memory
-    float *h_a = (float*)malloc(bytes);
-    float *h_b = (float*)malloc(bytes);
-    float *h_c = (float*)malloc(bytes);
+    GPU --> L2["L2 Cache<br/>(Shared across all SMs)<br/>Several MB"]
+    GPU --> HBM["HBM/GDDR Memory<br/>High Bandwidth<br/>GB/s throughput"]
+    GPU --> SM1["Streaming Multiprocessor<br/>(SM 1)"]
+    GPU --> SM2["Streaming Multiprocessor<br/>(SM 2)"]
+    GPU --> SMN["Streaming Multiprocessor<br/>(SM N)"]
     
-    // Initialize data
-    for (int i = 0; i < n; i++) {
-        h_a[i] = i;
-        h_b[i] = i * 2;
-    }
+    SM1 --> P1_1["<b>Processing Block 1</b>"]
+    SM1 --> P1_2["<b>Processing Block 2</b>"]
+    SM1 --> P1_3["<b>Processing Block 3</b>"]
+    SM1 --> P1_4["<b>Processing Block 4</b>"]
+    SM1 --> SharedMem1["Shared Memory<br/>L1 Cache<br/>64-128 KB"]
     
-    // Allocate device memory
-    float *d_a, *d_b, *d_c;
-    cudaMalloc(&d_a, bytes);
-    cudaMalloc(&d_b, bytes);
-    cudaMalloc(&d_c, bytes);
+    P1_1 --> WS1["Warp Scheduler<br/>Instruction Dispatch"]
+    P1_1 --> DU1["Dispatch Units<br/>Instruction Issue"]
+    P1_1 --> RF1["Register File<br/>Fast Storage"]
+    P1_1 --> FP32_1["FP32 Cores<br/>Single Precision<br/>32 units"]
+    P1_1 --> FP64_1["FP64 Cores<br/>Double Precision<br/>16 units"]
+    P1_1 --> INT1["INT32 Cores<br/>Integer Operations<br/>32 units"]
+    P1_1 --> TENSOR1["Tensor Cores<br/>Matrix Operations<br/>4 units"]
+    P1_1 --> SFU1["Special Function Units<br/>Transcendentals<br/>sin, cos, sqrt"]
+    P1_1 --> LD_ST1["Load/Store Units<br/>Memory Access"]
     
-    // Copy data to device
-    cudaMemcpy(d_a, h_a, bytes, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, h_b, bytes, cudaMemcpyHostToDevice);
+    style GPU fill:#4a90e2,stroke:#333,stroke-width:4px,color:#fff
+    style L2 fill:#ff9800,stroke:#333,stroke-width:2px
+    style HBM fill:#e91e63,stroke:#333,stroke-width:2px
+    style SM1 fill:#7cb342,stroke:#333,stroke-width:3px
+    style SM2 fill:#7cb342,stroke:#333,stroke-width:3px
+    style SMN fill:#7cb342,stroke:#333,stroke-width:3px
+    style P1_1 fill:#81c784,stroke:#333,stroke-width:2px
+    style P1_2 fill:#81c784,stroke:#333,stroke-width:2px
+    style P1_3 fill:#81c784,stroke:#333,stroke-width:2px
+    style P1_4 fill:#81c784,stroke:#333,stroke-width:2px
+    style SharedMem1 fill:#ffeb3b,stroke:#333,stroke-width:2px
+    style WS1 fill:#b39ddb,stroke:#333,stroke-width:1px
+    style DU1 fill:#b39ddb,stroke:#333,stroke-width:1px
+    style RF1 fill:#ffccbc,stroke:#333,stroke-width:1px
+    style FP32_1 fill:#90caf9,stroke:#333,stroke-width:1px
+    style FP64_1 fill:#90caf9,stroke:#333,stroke-width:1px
+    style INT1 fill:#a5d6a7,stroke:#333,stroke-width:1px
+    style TENSOR1 fill:#f48fb1,stroke:#333,stroke-width:1px
+    style SFU1 fill:#ce93d8,stroke:#333,stroke-width:1px
+    style LD_ST1 fill:#fff59d,stroke:#333,stroke-width:1px
+```
+
+**GPU Architecture Hierarchy:**
+
+##### **1. GPU Die (Complete Chip)**
+
+- The entire GPU package containing all components
+- Modern GPUs have 40-140+ SMs depending on model
+- Shared L2 cache (several MB) accessible by all SMs
+- High-bandwidth memory interface (HBM2/HBM3 or GDDR6/6X)
+- Global memory controller and interconnects
+
+##### **2. Streaming Multiprocessor (SM)**
+
+- Fundamental processing unit of the GPU
+- Each SM can execute multiple thread blocks concurrently
+- Contains:
+  - 4 Processing Blocks (sub-partitions)
+  - Shared Memory / L1 Cache (64-128 KB, configurable)
+  - Texture units and special function units
+  - Register file (several thousand registers)
+- Example: NVIDIA A100 has 108 SMs
+
+##### **3. Processing Block (Sub-partition within SM)**
+
+- Each SM is **divided into 4 processing blocks (partitions)**
+- Each partition contains execution units and control logic
+- **Each partition can execute up to 8 warps simultaneously**
+- Components in each processing block:
+
+  **Control Units:**
+
+  - **Warp Scheduler**: Critical for managing warp execution
+  - **Dispatch Units**: Issue instructions to execution units
+
+  **Storage:**
+
+  - **Register File**: Ultra-fast thread-local storage (32-bit registers)
+
+  **Execution Units:**
+
+  - **FP32 Cores**: Single-precision floating-point (32 per block)
+  - **FP64 Cores**: Double-precision floating-point (16 per block)
+  - **INT32 Cores**: Integer arithmetic operations (32 per block)
+  - **Tensor Cores**: Matrix multiply-accumulate for AI (4 per block)
+  - **Special Function Units (SFU)**: sin, cos, sqrt, exp, log
+  - **Load/Store Units (LD/ST)**: Memory access operations
+
+##### **4. Warp Execution and Scheduling Within SM**
+
+Understanding how warps are managed within an SM is crucial for performance optimization.
+
+**Block-to-Warp Division:**
+
+```yaml
+Thread Block Division into Warps:
+- Each thread block is divided into warps of 32 threads
+- Example: Block with 256 threads → 256/32 = 8 warps
+- Example: Block with 512 threads → 512/32 = 16 warps
+- Maximum: 1024 threads per block → 32 warps maximum
+
+Partition Capacity:
+- Each SM has 4 partitions
+- Each partition can execute 8 warps concurrently
+- Total concurrent warps per SM: 4 partitions × 8 warps = 32 warps
+```
+
+**Why Warp Schedulers Are Essential:**
+
+```yaml
+Scenario: An SM receives multiple thread blocks
+
+Example Configuration:
+- 4 thread blocks assigned to one SM
+- Each block has 512 threads (16 warps per block)
+- Total warps on SM: 4 blocks × 16 warps = 64 warps
+
+Problem:
+- SM has 4 partitions, each can execute only 8 warps at a time
+- Total concurrent: 4 × 8 = 32 warps active
+- But we have 64 warps total!
+- 32 warps must wait
+
+Solution: Warp Scheduler
+- Monitors warp states: ready, stalled, executing
+- Switches between warps to hide latency
+- When a warp stalls (memory access, sync), scheduler activates another
+- Maximizes throughput by keeping execution units busy
+```
+
+**Warp Scheduler Operation:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ready: Warp created from block
+    Ready --> Executing: Scheduler selects warp
+    Executing --> Stalled: Memory access / dependency
+    Executing --> Completed: All instructions done
+    Stalled --> Ready: Data arrives / dependency resolved
+    Ready --> Ready: Waiting for partition slot
+    Completed --> [*]
     
-    // Launch kernel
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
-    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_a, d_b, d_c, n);
+    note right of Executing
+        Warp occupies partition slot
+        Executes on CUDA cores
+        All 32 threads in lockstep
+    end note
     
-    // Copy result back to host
-    cudaMemcpy(h_c, d_c, bytes, cudaMemcpyDeviceToHost);
-    
-    // Cleanup
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_c);
-    free(h_a);
-    free(h_b);
-    free(h_c);
-    
-    return 0;
-}
-```
-
-### CUDA Function Qualifiers
-
-| Qualifier | Executes On | Callable From | Purpose |
-|-----------|-------------|---------------|---------|
-| `__global__` | Device (GPU) | Host (CPU) | Kernel function |
-| `__device__` | Device | Device | GPU helper function |
-| `__host__` | Host | Host | CPU function (default) |
-| `__host__ __device__` | Both | Both | Compiled for both CPU/GPU |
-
-### Memory Management Functions
-
-```cuda
-// Allocation
-cudaMalloc(void **ptr, size_t size);
-cudaMallocManaged(void **ptr, size_t size);  // Unified Memory
-
-// Copying
-cudaMemcpy(void *dst, void *src, size_t size, cudaMemcpyKind kind);
-// cudaMemcpyKind: HostToDevice, DeviceToHost, DeviceToDevice, HostToHost
-
-// Initialization
-cudaMemset(void *ptr, int value, size_t count);
-
-// Freeing
-cudaFree(void *ptr);
-```
-
-### Kernel Launch Configuration
-
-```cuda
-// Syntax
-kernel_name<<<gridDim, blockDim, sharedMemBytes, stream>>>(arguments);
-
-// Examples
-// 1D Grid and Block
-myKernel<<<100, 256>>>(args);  // 100 blocks, 256 threads/block
-
-// 2D Grid and Block
-dim3 grid(16, 16);      // 16x16 blocks
-dim3 block(32, 32);     // 32x32 threads per block
-myKernel<<<grid, block>>>(args);
-
-// With shared memory
-myKernel<<<grid, block, 1024>>>(args);  // 1024 bytes shared memory
-```
-
-### Built-in Variables
-
-```cuda
-// Thread indices
-threadIdx.x, threadIdx.y, threadIdx.z  // Thread ID within block
-blockIdx.x, blockIdx.y, blockIdx.z     // Block ID within grid
-blockDim.x, blockDim.y, blockDim.z     // Block dimensions
-gridDim.x, gridDim.y, gridDim.z        // Grid dimensions
-
-// Calculate global thread ID
-int tid = blockIdx.x * blockDim.x + threadIdx.x;  // 1D
-int tid = (blockIdx.y * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;  // 2D
-```
-
-### Error Checking
-
-```cuda
-// Macro for error checking
-#define CUDA_CHECK(call) \
-    do { \
-        cudaError_t err = call; \
-        if (err != cudaSuccess) { \
-            fprintf(stderr, "CUDA error in %s:%d: %s\n", \
-                    __FILE__, __LINE__, cudaGetErrorString(err)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
-
-// Usage
-CUDA_CHECK(cudaMalloc(&d_data, size));
-CUDA_CHECK(cudaMemcpy(d_data, h_data, size, cudaMemcpyHostToDevice));
-
-// Check kernel errors
-myKernel<<<grid, block>>>(args);
-CUDA_CHECK(cudaGetLastError());
-CUDA_CHECK(cudaDeviceSynchronize());
-```
-
-### Compilation
-
-```bash
-# Basic compilation
-nvcc program.cu -o program
-
-# With optimization
-nvcc -O3 program.cu -o program
-
-# Specify architecture
-nvcc -arch=sm_80 program.cu -o program  # Ampere
-nvcc -arch=sm_86 program.cu -o program  # RTX 30 series
-
-# Multiple architectures (PTX + Binary)
-nvcc -gencode arch=compute_70,code=sm_70 \
-     -gencode arch=compute_80,code=sm_80 \
-     -gencode arch=compute_86,code=sm_86 \
-     program.cu -o program
-
-# With debugging
-nvcc -g -G program.cu -o program  # -G disables optimizations for debugging
-
-# Link with libraries
-nvcc program.cu -o program -lcublas -lcudnn
-```
-
-### Compute Capability Targets
-
-| Architecture | Compute Capability | nvcc Flag |
-|--------------|-------------------|-----------|
-| Pascal | 6.0, 6.1, 6.2 | `-arch=sm_60` |
-| Volta | 7.0 | `-arch=sm_70` |
-| Turing | 7.5 | `-arch=sm_75` |
-| Ampere | 8.0, 8.6 | `-arch=sm_80`, `-arch=sm_86` |
-| Ada | 8.9 | `-arch=sm_89` |
-| Hopper | 9.0 | `-arch=sm_90` |
-
----
-
-## 🆔 Profiling
-
-### Why Profile?
-
-Profiling helps identify:
-
-- **Performance bottlenecks**: Where your code spends most time
-- **Memory issues**: Inefficient memory access patterns
-- **Occupancy problems**: Underutilized GPU resources
-- **Kernel inefficiencies**: Suboptimal thread configurations
-
-### NVIDIA Profiling Tools
-
-| Tool | Purpose | Use Case | Interface |
-|------|---------|----------|-----------|
-| **Nsight Systems** | System-wide analysis | Find CPU/GPU bottlenecks, understand workflow | GUI + CLI |
-| **Nsight Compute** | Kernel profiling | Optimize individual kernels, memory analysis | GUI + CLI |
-| **nvprof** | Legacy profiler | Quick command-line profiling (deprecated) | CLI |
-| **CUDA Events** | Code instrumentation | Measure specific code sections | API |
-
-### Nsight Systems (System-Level Profiling)
-
-#### Basic Usage
-
-```bash
-# Profile application
-nsys profile --stats=true ./myprogram
-
-# With specific output
-nsys profile -o my_report ./myprogram
-
-# Profile specific section (API calls)
-nsys profile --trace=cuda,nvtx ./myprogram
-
-# Advanced: Capture CPU + GPU
-nsys profile --trace=cuda,nvtx,osrt,cublas ./myprogram
-```
-
-#### Key Metrics to Examine
-
-- **Timeline**: Visualize CPU/GPU activity over time
-- **CUDA API calls**: Memory transfers, kernel launches
-- **Kernel execution**: Duration, concurrency
-- **Memory transfers**: Size, direction, duration
-- **CPU threads**: Host code execution
-
-#### Interpretation
-
-```bash
-# Generate report
-nsys stats my_report.nsys-rep
-
-# Look for:
-# - Large gaps between kernel launches (CPU overhead)
-# - Memory transfer overhead (consider unified memory)
-# - Low GPU utilization (need more parallelism)
-# - Serialized kernel execution (use streams)
-```
-
-### Nsight Compute (Kernel-Level Profiling)
-
-#### Basic Usage of Nsight Comptue
-
-```bash
-# Profile all kernels
-ncu ./myprogram
-
-# Profile specific kernel
-ncu --kernel-name myKernel ./myprogram
-
-# Full analysis with all metrics
-ncu --set full ./myprogram
-
-# Export report
-ncu -o kernel_report --set full ./myprogram
-
-# Open report in GUI
-ncu-ui kernel_report.ncu-rep
-```
-
-#### Key Sections
-
-##### 1. GPU Speed of Light (SOL)
-
-```text
-Compute (SM) Throughput:  45%  [Low utilization]
-Memory Throughput:        85%  [Memory bound!]
-```
-
-- **SM Utilization < 60%**: Compute-bound or low occupancy
-- **Memory Throughput > 80%**: Memory-bound (optimize memory access)
-
-##### 2. Occupancy
-
-```text
-Theoretical Occupancy:  75%
-Achieved Occupancy:     62%  [Can improve]
-```
-
-- **Low occupancy**: Adjust block size, reduce register/shared memory usage
-- **Target**: 50-70% usually sufficient
-
-##### 3. Memory Workload Analysis
-
-```text
-Global Memory Load Efficiency:   45%  [Poor coalescing]
-Global Memory Store Efficiency:  80%  [Good]
-L1/L2 Cache Hit Rate:            35%  [Low]
-```
-
-- **Low efficiency**: Improve memory access patterns
-- **Low cache hit rate**: Consider data locality
-
-##### 4. Warp Execution
-
-```text
-Branch Divergence:        High
-Warp Execution Efficiency: 65%
-```
-
-- **High divergence**: Minimize conditional statements
-- **Low efficiency**: Optimize thread utilization
-
-#### Optimization Workflow
-
-```bash
-# 1. Identify bottleneck
-ncu --set full ./myprogram
-
-# 2. Focus on specific metric
-ncu --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed ./myprogram
-
-# 3. Compare before/after
-ncu --metrics gpu__time_duration.sum --csv ./myprogram > baseline.csv
-# (make optimizations)
-ncu --metrics gpu__time_duration.sum --csv ./myprogram > optimized.csv
-```
-
-### CUDA Events (Code Instrumentation)
-
-#### Basic Timing
-
-```cuda
-#include <cuda_runtime.h>
-
-// Create events
-cudaEvent_t start, stop;
-cudaEventCreate(&start);
-cudaEventCreate(&stop);
-
-// Record start time
-cudaEventRecord(start);
-
-// Launch kernel
-myKernel<<<grid, block>>>(args);
-
-// Record end time
-cudaEventRecord(stop);
-
-// Wait for completion
-cudaEventSynchronize(stop);
-
-// Calculate elapsed time
-float milliseconds = 0;
-cudaEventElapsedTime(&milliseconds, start, stop);
-printf("Kernel time: %f ms\n", milliseconds);
-
-// Cleanup
-cudaEventDestroy(start);
-cudaEventDestroy(stop);
-```
-
-#### Timing Multiple Kernels
-
-```cuda
-cudaEvent_t start, stop, middle;
-cudaEventCreate(&start);
-cudaEventCreate(&middle);
-cudaEventCreate(&stop);
-
-cudaEventRecord(start);
-kernel1<<<grid, block>>>(args);
-cudaEventRecord(middle);
-kernel2<<<grid, block>>>(args);
-cudaEventRecord(stop);
-
-cudaEventSynchronize(stop);
-
-float time1, time2;
-cudaEventElapsedTime(&time1, start, middle);
-cudaEventElapsedTime(&time2, middle, stop);
-
-printf("Kernel 1: %f ms\n", time1);
-printf("Kernel 2: %f ms\n", time2);
-```
-
-### NVTX (NVIDIA Tools Extension)
-
-#### Marking Code Regions
-
-```cuda
-#include <nvToolsExt.h>
-
-// Mark function/region
-void myFunction() {
-    nvtxRangePush("MyFunction");
-    
-    // Your code here
-    kernel<<<grid, block>>>(args);
-    
-    nvtxRangePop();
-}
-
-// Color-coded markers
-void processData() {
-    // Green for memory transfer
-    nvtxEventAttributes_t eventAttrib = {0};
-    eventAttrib.version = NVTX_VERSION;
-    eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    eventAttrib.colorType = NVTX_COLOR_ARGB;
-    eventAttrib.color = 0xFF00FF00;  // Green
-    eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    eventAttrib.message.ascii = "Memory Transfer";
-    
-    nvtxRangePushEx(&eventAttrib);
-    cudaMemcpy(d_data, h_data, size, cudaMemcpyHostToDevice);
-    nvtxRangePop();
-    
-    // Blue for computation
-    eventAttrib.color = 0xFF0000FF;  // Blue
-    eventAttrib.message.ascii = "Kernel Execution";
-    nvtxRangePushEx(&eventAttrib);
-    kernel<<<grid, block>>>(args);
-    nvtxRangePop();
-}
-
-// Compile with NVTX
-// nvcc -lnvToolsExt program.cu -o program
-```
-
-### Performance Metrics Glossary
-
-| Metric | Description | Target |
-|--------|-------------|--------|
-| **Occupancy** | % of active warps vs max possible | 50-75% |
-| **SM Efficiency** | % of time SMs are active | > 60% |
-| **IPC** | Instructions per cycle | Architecture dependent |
-| **Memory Throughput** | Data transferred per second | Match kernel needs |
-| **Coalescing Efficiency** | % of coalesced memory accesses | > 80% |
-| **Branch Efficiency** | % of non-divergent branches | > 90% |
-| **Warp Execution Eff.** | % of active threads in warps | > 80% |
-
-### Common Profiling Commands Reference
-
-```bash
-# Nsight Systems
-nsys profile --stats=true -o report ./app
-nsys profile --trace=cuda,nvtx,cublas -o report ./app
-nsys stats report.nsys-rep
-
-# Nsight Compute
-ncu --set full -o report ./app
-ncu --kernel-name "myKernel" --launch-skip 0 --launch-count 1 ./app
-ncu --query-metrics  # List all available metrics
-ncu --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed ./app
-
-# Legacy nvprof (deprecated but still useful)
-nvprof ./app
-nvprof --print-gpu-trace ./app
-nvprof --metrics achieved_occupancy,gld_efficiency ./app
-```
-
-### Profiling Best Practices
-
-1. **Profile production workloads**: Use realistic data sizes
-2. **Profile multiple runs**: Ignore cold start overhead
-3. **Focus on hotspots**: Optimize the 20% that takes 80% time
-4. **Measure incrementally**: Profile after each optimization
-5. **Use NVTX markers**: Label important code sections
-6. **Check multiple metrics**: Don't optimize blindly
-7. **Consider Amdahl's Law**: GPU optimization has limits if CPU is bottleneck
-
----
-
-## 🎯 Performance Analysis
-
-### Performance Optimization Strategy
-
-```text
-1. Profile → 2. Identify Bottleneck → 3. Optimize → 4. Measure → 5. Repeat
-```
-
-### Types of Bottlenecks
-
-| Type | Symptoms | Solutions |
-|------|----------|-----------|
-| **Memory Bound** | High memory throughput, low SM utilization | Improve coalescing, use shared memory, optimize access patterns |
-| **Compute Bound** | High SM utilization, low memory throughput | Increase ILP, reduce operations, use specialized cores |
-| **Latency Bound** | Low occupancy, high latency | Increase parallelism, hide latency with more threads |
-| **Bandwidth Bound** | PCIe saturation | Minimize transfers, use pinned memory, batch operations |
-
-### Memory Performance
-
-#### Memory Hierarchy
-
-| Memory Type | Latency | Bandwidth | Scope | Size |
-|-------------|---------|-----------|-------|------|
-| **Registers** | 1 cycle | ~TB/s | Thread | 64KB/SM |
-| **L1 Cache** | ~5 cycles | ~7 TB/s | SM | 128KB/SM |
-| **Shared Memory** | ~30 cycles | ~15 TB/s | Block | 48-164KB/SM |
-| **L2 Cache** | ~200 cycles | ~2 TB/s | Device | 6-60MB |
-| **Global Memory** | ~400 cycles | 0.9-3 TB/s | Device | GB-192GB |
-| **Host Memory** | ~100,000 cycles | 16-32 GB/s | System | System RAM |
-
-#### Coalesced Memory Access
-
-##### **Bad: Strided Access**
-
-```cuda
-// Each thread accesses memory with stride
-__global__ void stridedAccess(float *data, int stride) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    float value = data[idx * stride];  // BAD: Non-coalesced
-}
-```
-
-##### **Good: Coalesced Access**
-
-```cuda
-// Sequential access pattern
-__global__ void coalescedAccess(float *data) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    float value = data[idx];  // GOOD: Coalesced
-}
-```
-
-#### Memory Alignment
-
-```cuda
-// Align data structures to 128 bytes
-struct __align__(16) MyData {  // 16-byte alignment
-    float x, y, z, w;
-};
-
-// Use aligned memory allocation
-float *d_data;
-cudaMalloc(&d_data, size);  // Already aligned
-```
-
-### Occupancy Optimization
-
-#### Theoretical Occupancy Calculation
-
-```text
-Occupancy = Active Warps / Maximum Possible Warps
-
-Factors limiting occupancy:
-- Threads per block
-- Registers per thread
-- Shared memory per block
-- Maximum warps per SM
-```
-
-#### Occupancy Calculator
-
-```cuda
-// Check occupancy at runtime
-int blockSize = 256;
-int minGridSize, optimalBlockSize;
-cudaOccupancyMaxPotentialBlockSize(&minGridSize, &optimalBlockSize, 
-                                    myKernel, 0, 0);
-printf("Suggested block size: %d\n", optimalBlockSize);
-
-// Manual calculation
-cudaDeviceProp prop;
-cudaGetDeviceProperties(&prop, 0);
-int maxThreadsPerSM = prop.maxThreadsPerMultiProcessor;
-int maxBlocksPerSM = prop.maxBlocksPerMultiProcessor;
-```
-
-#### Tuning Block Size
-
-```cuda
-// Test different block sizes
-int blockSizes[] = {64, 128, 256, 512, 1024};
-float bestTime = FLT_MAX;
-int bestBlockSize = 0;
-
-for (int i = 0; i < 5; i++) {
-    int blockSize = blockSizes[i];
-    int gridSize = (n + blockSize - 1) / blockSize;
-    
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    
-    cudaEventRecord(start);
-    myKernel<<<gridSize, blockSize>>>(args);
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    
-    float ms;
-    cudaEventElapsedTime(&ms, start, stop);
-    
-    if (ms < bestTime) {
-        bestTime = ms;
-        bestBlockSize = blockSize;
-    }
-}
-printf("Optimal block size: %d (%.2f ms)\n", bestBlockSize, bestTime);
-```
-
-### Instruction-Level Parallelism (ILP)
-
-#### Increase ILP with Unrolling
-
-```cuda
-// Low ILP
-__global__ void lowILP(float *a, float *b, float *c, int n) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) {
-        c[i] = a[i] + b[i];
-    }
-}
-
-// Higher ILP - each thread processes 4 elements
-__global__ void higherILP(float *a, float *b, float *c, int n) {
-    int i = 4 * (blockIdx.x * blockDim.x + threadIdx.x);
-    if (i + 3 < n) {
-        c[i]   = a[i]   + b[i];
-        c[i+1] = a[i+1] + b[i+1];
-        c[i+2] = a[i+2] + b[i+2];
-        c[i+3] = a[i+3] + b[i+3];
-    }
-}
-```
-
-### Branch Divergence Mitigation
-
-#### Problem: Divergent Branches
-
-```cuda
-// BAD: Highly divergent
-__global__ void divergentKernel(int *data, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
-        if (data[idx] % 2 == 0) {
-            // Even threads do this
-            data[idx] *= 2;
-        } else {
-            // Odd threads do this
-            data[idx] *= 3;
-        }
-    }
-}
-```
-
-#### Solution: Minimize Divergence
-
-```cuda
-// BETTER: Reduce divergence with arithmetic
-__global__ void lessDiv ergentKernel(int *data, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
-        int factor = 2 + (data[idx] & 1);  // 2 for even, 3 for odd
-        data[idx] *= factor;
-    }
-}
-
-// BEST: Sort data to group similar branches
-// Process even and odd numbers in separate kernel calls
-```
-
-### Shared Memory Optimization
-
-#### Bank Conflicts
-
-```cuda
-// BAD: Bank conflict (32 threads access same bank)
-__shared__ float sharedMem[32];
-int tid = threadIdx.x;
-float value = sharedMem[tid % 32];  // All threads hit same 32 banks
-
-// GOOD: No bank conflict (sequential access)
-__shared__ float sharedMem[256];
-int tid = threadIdx.x;
-float value = sharedMem[tid];  // Each thread accesses different bank
-```
-
-#### Padding to Avoid Conflicts
-
-```cuda
-// Without padding
-__shared__ float sharedMem[32][32];  // May cause conflicts
-
-// With padding
-__shared__ float sharedMem[32][33];  // Extra column avoids conflicts
-```
-
-### Kernel Fusion
-
-```cuda
-// BAD: Multiple kernel launches
-kernel1<<<grid, block>>>(d_a, d_b);
-cudaDeviceSynchronize();
-kernel2<<<grid, block>>>(d_b, d_c);
-cudaDeviceSynchronize();
-
-// GOOD: Fused kernel
-__global__ void fusedKernel(float *a, float *c) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    // Do both operations
-    float temp = kernel1_operation(a[idx]);
-    c[idx] = kernel2_operation(temp);
-}
-fusedKernel<<<grid, block>>>(d_a, d_c);
-```
-
-### Asynchronous Execution and Streams
-
-```cuda
-// Create streams
-cudaStream_t stream[4];
-for (int i = 0; i < 4; i++) {
-    cudaStreamCreate(&stream[i]);
-}
-
-// Overlap data transfer and computation
-for (int i = 0; i < 4; i++) {
-    cudaMemcpyAsync(d_data[i], h_data[i], size, 
-                    cudaMemcpyHostToDevice, stream[i]);
-    kernel<<<grid, block, 0, stream[i]>>>(d_data[i]);
-    cudaMemcpyAsync(h_result[i], d_result[i], size,
-                    cudaMemcpyDeviceToHost, stream[i]);
-}
-
-// Synchronize all streams
-cudaDeviceSynchronize();
-```
-
-### Performance Checklist
-
-- [ ] **Memory access is coalesced**
-- [ ] **Occupancy is 50-75%**
-- [ ] **Shared memory used for reused data**
-- [ ] **Bank conflicts minimized**
-- [ ] **Branch divergence reduced**
-- [ ] **Register usage optimized**
-- [ ] **Asynchronous operations used**
-- [ ] **Multiple streams for overlapping**
-- [ ] **Pinned memory for transfers**
-- [ ] **Appropriate block size chosen**
-
----
-
----
-
-## 🗃️ 2D Indexing
-
-### Understanding 2D Thread Organization
-
-#### Thread Indexing in 2D Grid
-
-```cuda
-// 2D grid and block configuration
-dim3 blockDim(BLOCK_WIDTH, BLOCK_HEIGHT);  // e.g., (16, 16)
-dim3 gridDim(GRID_WIDTH, GRID_HEIGHT);      // e.g., (32, 32)
-
-kernel<<<gridDim, blockDim>>>(args);
-```
-
-#### Calculating 2D Global Index
-
-```cuda
-__global__ void kernel2D(float *data, int width, int height) {
-    // Calculate 2D indices
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    // Boundary check
-    if (col < width && row < height) {
-        // Convert 2D to 1D index (row-major)
-        int idx = row * width + col;
-        
-        // Access data
-        data[idx] = someValue;
-    }
-}
-```
-
-### Memory Layout: Row-Major vs Column-Major
-
-#### Row-Major Order (C/CUDA Default)
-
-```text
-Matrix[row][col]
-[0,0] [0,1] [0,2]    →  Memory: [0,0][0,1][0,2][1,0][1,1][1,2]...
-[1,0] [1,1] [1,2]
-```
-
-```cuda
-// Row-major indexing
-int idx = row * width + col;
-```
-
-#### Column-Major Order (Fortran)
-
-```text
-Matrix[row][col]
-[0,0] [0,1] [0,2]    →  Memory: [0,0][1,0][2,0][0,1][1,1][2,1]...
-[1,0] [1,1] [1,2]
-```
-
-```cuda
-// Column-major indexing
-int idx = col * height + row;
-```
-
-### Matrix Addition Example
-
-```cuda
-#define WIDTH 1024
-#define HEIGHT 1024
-#define BLOCK_SIZE 16
-
-__global__ void matrixAdd(float *A, float *B, float *C, int width, int height) {
-    // 2D thread coordinates
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    // Boundary check
-    if (col < width && row < height) {
-        int idx = row * width + col;
-        C[idx] = A[idx] + B[idx];
-    }
-}
-
-int main() {
-    size_t bytes = WIDTH * HEIGHT * sizeof(float);
-    
-    // Allocate memory
-    float *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, bytes);
-    cudaMalloc(&d_B, bytes);
-    cudaMalloc(&d_C, bytes);
-    
-    // Define block and grid dimensions
-    dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 gridDim((WIDTH + BLOCK_SIZE - 1) / BLOCK_SIZE,
-                 (HEIGHT + BLOCK_SIZE - 1) / BLOCK_SIZE);
-    
-    // Launch kernel
-    matrixAdd<<<gridDim, blockDim>>>(d_A, d_B, d_C, WIDTH, HEIGHT);
-    
-    cudaDeviceSynchronize();
-    return 0;
-}
-```
-
-### Matrix Transpose (Naive)
-
-```cuda
-__global__ void transposeNaive(float *input, float *output, 
-                                int width, int height) {
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    if (col < width && row < height) {
-        int idxIn = row * width + col;
-        int idxOut = col * height + row;  // Transposed indices
-        output[idxOut] = input[idxIn];
-    }
-}
-```
-
-### Matrix Transpose (Optimized with Shared Memory)
-
-```cuda
-#define TILE_DIM 32
-
-__global__ void transposeOptimized(float *input, float *output,
-                                    int width, int height) {
-    // Shared memory tile (with padding to avoid bank conflicts)
-    __shared__ float tile[TILE_DIM][TILE_DIM + 1];
-    
-    // Global position
-    int x = blockIdx.x * TILE_DIM + threadIdx.x;
-    int y = blockIdx.y * TILE_DIM + threadIdx.y;
-    
-    // Load tile from global memory (coalesced read)
-    if (x < width && y < height) {
-        int idxIn = y * width + x;
-        tile[threadIdx.y][threadIdx.x] = input[idxIn];
-    }
-    
-    __syncthreads();
-    
-    // Transposed global position
-    x = blockIdx.y * TILE_DIM + threadIdx.x;
-    y = blockIdx.x * TILE_DIM + threadIdx.y;
-    
-    // Store tile to global memory (coalesced write)
-    if (x < height && y < width) {
-        int idxOut = y * height + x;
-        output[idxOut] = tile[threadIdx.x][threadIdx.y];
-    }
-}
-```
-
-### 2D Convolution Example
-
-```cuda
-#define FILTER_SIZE 5
-#define FILTER_RADIUS 2
-
-__global__ void convolution2D(float *input, float *output, float *filter,
-                               int width, int height) {
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    if (col < width && row < height) {
-        float sum = 0.0f;
-        
-        // Apply filter
-        for (int fRow = -FILTER_RADIUS; fRow <= FILTER_RADIUS; fRow++) {
-            for (int fCol = -FILTER_RADIUS; fCol <= FILTER_RADIUS; fCol++) {
-                int imageRow = row + fRow;
-                int imageCol = col + fCol;
-                
-                // Boundary check
-                if (imageRow >= 0 && imageRow < height &&
-                    imageCol >= 0 && imageCol < width) {
-                    
-                    int imageIdx = imageRow * width + imageCol;
-                    int filterIdx = (fRow + FILTER_RADIUS) * FILTER_SIZE +
-                                    (fCol + FILTER_RADIUS);
-                    
-                    sum += input[imageIdx] * filter[filterIdx];
-                }
-            }
-        }
-        
-        int idx = row * width + col;
-        output[idx] = sum;
-    }
-}
-```
-
-### Image Processing: Grayscale Conversion
-
-```cuda
-__global__ void rgbToGrayscale(unsigned char *input, unsigned char *output,
-                                int width, int height) {
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    if (col < width && row < height) {
-        int idx = row * width + col;
-        int rgbIdx = idx * 3;  // RGB has 3 channels
-        
-        unsigned char r = input[rgbIdx];
-        unsigned char g = input[rgbIdx + 1];
-        unsigned char b = input[rgbIdx + 2];
-        
-        // Weighted average for perceptual accuracy
-        output[idx] = (unsigned char)(0.299f * r + 0.587f * g + 0.114f * b);
-    }
-}
-
-// Launch
-dim3 blockDim(16, 16);
-dim3 gridDim((width + 15) / 16, (height + 15) / 16);
-rgbToGrayscale<<<gridDim, blockDim>>>(d_input, d_output, width, height);
-```
-
-### 3D Indexing Extension
-
-```cuda
-__global__ void kernel3D(float *data, int width, int height, int depth) {
-    // 3D thread coordinates
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int z = blockIdx.z * blockDim.z + threadIdx.z;
-    
-    if (x < width && y < height && z < depth) {
-        // 3D to 1D index
-        int idx = z * (width * height) + y * width + x;
-        
-        // Process data
-        data[idx] = someValue;
-    }
-}
-
-// Launch 3D kernel
-dim3 blockDim(8, 8, 8);
-dim3 gridDim((width + 7) / 8, (height + 7) / 8, (depth + 7) / 8);
-kernel3D<<<gridDim, blockDim>>>(d_data, width, height, depth);
-```
-
-### Block and Grid Size Calculations
-
-```cuda
-// Helper function for grid size calculation
-dim3 calculateGridSize(int width, int height, int blockWidth, int blockHeight) {
-    int gridWidth = (width + blockWidth - 1) / blockWidth;
-    int gridHeight = (height + blockHeight - 1) / blockHeight;
-    return dim3(gridWidth, gridHeight);
-}
-
-// Usage
-dim3 blockDim(16, 16);
-dim3 gridDim = calculateGridSize(imageWidth, imageHeight, 16, 16);
-myKernel<<<gridDim, blockDim>>>(args);
-```
-
-### Coalescing in 2D Access Patterns
-
-```cuda
-// GOOD: Coalesced - threads in same warp access adjacent columns
-__global__ void goodCoalescing(float *data, int width, int height) {
-    int col = blockIdx.x * blockDim.x + threadIdx.x;  // Varies within warp
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    if (col < width && row < height) {
-        int idx = row * width + col;  // Adjacent threads → adjacent memory
-        float val = data[idx];
-    }
-}
-
-// BAD: Non-coalesced - threads access different rows
-__global__ void badCoalescing(float *data, int width, int height) {
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
-    if (col < width && row < height) {
-        int idx = col * height + row;  // Strided access, poor coalescing
-        float val = data[idx];
-    }
-}
-```
-
----
-
-## 🧠 Shared Memory and Warp Divergence
-
-### Shared Memory Overview
-
-**Shared memory** is a user-managed cache that is:
-
-- **Fast**: ~100x faster than global memory
-- **Limited**: 48KB to 164KB per SM (architecture-dependent)
-- **Scope**: Accessible by all threads in a block
-- **Lifetime**: Exists for duration of block execution
-
-### Shared Memory Declaration
-
-```cuda
-// Static allocation (size known at compile time)
-__global__ void kernel() {
-    __shared__ float sharedData[256];
-    // Use sharedData...
-}
-
-// Dynamic allocation (size determined at launch)
-__global__ void kernelDynamic() {
-    extern __shared__ float sharedData[];  // Size specified at launch
-    // Use sharedData...
-}
-
-// Launch with dynamic shared memory
-kernel<<<grid, block, sharedMemSize>>>(args);
-//                     ^^^^^^^^^^^^^^ bytes of shared memory
-```
-
-### Shared Memory Banks
-
-- **32 banks** (on most architectures)
-- **4-byte wide banks**
-- **Bank conflict**: Multiple threads in a warp access the same bank
-
-```text
-Bank 0:  [0][32][64]...
-Bank 1:  [1][33][65]...
-Bank 2:  [2][34][66]...
-...
-Bank 31: [31][63][95]...
-```
-
-#### No Conflict (Sequential Access)
-
-```cuda
-__shared__ float sharedMem[256];
-int tid = threadIdx.x;
-float value = sharedMem[tid];  // Each thread → different bank
-```
-
-#### Bank Conflict Example
-
-```cuda
-__shared__ float sharedMem[256];
-int tid = threadIdx.x;
-// Multiple threads access same bank
-float value = sharedMem[(tid * 2) % 32];  // BAD: 2-way conflict
-```
-
-#### Avoiding Bank Conflicts with Padding
-
-```cuda
-// Without padding: [32][32] causes conflicts on column access
-__shared__ float tile[32][32];
-
-// With padding: [32][33] shifts elements to different banks
-__shared__ float tile[32][33];
-
-// Access pattern
-int row = threadIdx.y;
-int col = threadIdx.x;
-float val = tile[row][col];  // No conflict with padding
-```
-
-### Matrix Multiplication with Shared Memory
-
-```cuda
-#define TILE_WIDTH 16
-
-__global__ void matrixMulShared(float *A, float *B, float *C,
-                                 int width) {
-    // Shared memory for tiles
-    __shared__ float tileA[TILE_WIDTH][TILE_WIDTH];
-    __shared__ float tileB[TILE_WIDTH][TILE_WIDTH];
-    
-    int row = blockIdx.y * TILE_WIDTH + threadIdx.y;
-    int col = blockIdx.x * TILE_WIDTH + threadIdx.x;
-    
-    float sum = 0.0f;
-    
-    // Loop over tiles
-    for (int t = 0; t < (width + TILE_WIDTH - 1) / TILE_WIDTH; t++) {
-        // Load tiles into shared memory
-        if (row < width && t * TILE_WIDTH + threadIdx.x < width) {
-            tileA[threadIdx.y][threadIdx.x] = 
-                A[row * width + t * TILE_WIDTH + threadIdx.x];
-        } else {
-            tileA[threadIdx.y][threadIdx.x] = 0.0f;
-        }
-        
-        if (col < width && t * TILE_WIDTH + threadIdx.y < width) {
-            tileB[threadIdx.y][threadIdx.x] = 
-                B[(t * TILE_WIDTH + threadIdx.y) * width + col];
-        } else {
-            tileB[threadIdx.y][threadIdx.x] = 0.0f;
-        }
-        
-        __syncthreads();  // Wait for all threads to load
-        
-        // Compute partial product
-        for (int k = 0; k < TILE_WIDTH; k++) {
-            sum += tileA[threadIdx.y][k] * tileB[k][threadIdx.x];
-        }
-        
-        __syncthreads();  // Wait before loading next tile
-    }
-    
-    // Write result
-    if (row < width && col < width) {
-        C[row * width + col] = sum;
-    }
-}
-```
-
-### Thread Synchronization
-
-```cuda
-__syncthreads();  // Barrier: all threads in block must reach this point
-```
-
-**Important Rules:**
-
-- Only synchronizes threads within the **same block**
-- Must be called by **all threads** in the block (or none in divergent paths)
-- Use before/after shared memory operations
-
-#### Common Mistake: Divergent Sync
-
-```cuda
-// BAD: Not all threads reach __syncthreads()
-if (threadIdx.x < 16) {
-    __syncthreads();  // WRONG: Deadlock!
-}
-
-// GOOD: All threads participate
-if (threadIdx.x < 16) {
-    // Do work
-}
-__syncthreads();  // All threads reach here
-```
-
-### Warp Divergence
-
-**Warp**: Group of 32 threads that execute in lockstep (SIMT - Single Instruction, Multiple Thread)
-
-#### What Causes Divergence?
-
-```cuda
-// Divergent branch
-if (threadIdx.x % 2 == 0) {
-    // Even threads execute path A
-    doWorkA();
-} else {
-    // Odd threads execute path B
-    doWorkB();
-}
-// Both paths execute serially (performance loss)
-```
-
-#### Divergence Example
-
-```text
-Warp with 32 threads:
-Thread 0-15: Take branch A → Execute A
-Thread 16-31: Idle (wait)
-Thread 0-15: Idle (wait)
-Thread 16-31: Take branch B → Execute B
-Result: 2x execution time
-```
-
-### Minimizing Warp Divergence
-
-#### Technique 1: Warp-Aligned Conditions
-
-```cuda
-// BAD: Divergence within warp
-if (threadIdx.x % 2 == 0) {
-    // Work
-}
-
-// BETTER: Whole warps take same path
-if (threadIdx.x < 64) {  // First 2 warps
-    // Work
-}
-```
-
-#### Technique 2: Avoid Data-Dependent Branches
-
-```cuda
-// BAD: Data-dependent branch
-__global__ void divergentKernel(int *data) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (data[idx] > 0) {
-        // Positive processing
-    } else {
-        // Negative processing
-    }
-}
-
-// BETTER: Use arithmetic instead of branches
-__global__ void branchlessKernel(int *data) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int sign = (data[idx] > 0) ? 1 : -1;
-    int result = data[idx] * sign * computeValue();
-}
-```
-
-#### Technique 3: Sort Data
-
-```cuda
-// Pre-process: Sort data so similar items are grouped
-// This reduces divergence when processing
-
-// Process positive numbers
-processPositive<<<grid, block>>>(positiveData, countPositive);
-
-// Process negative numbers
-processNegative<<<grid, block>>>(negativeData, countNegative);
-```
-
-### Warp-Level Primitives
-
-#### Warp Shuffle
-
-```cuda
-__global__ void warpShuffleExample() {
-    int value = threadIdx.x;
-    
-    // Get value from thread 0 in warp
-    int broadcast = __shfl_sync(0xffffffff, value, 0);
-    
-    // Get value from next thread (circular)
-    int neighbor = __shfl_sync(0xffffffff, value, (threadIdx.x + 1) % 32);
-    
-    // Butterfly exchange
-    int partner = __shfl_xor_sync(0xffffffff, value, 1);
-}
-```
-
-#### Warp Vote Functions
-
-```cuda
-__global__ void warpVoteExample(int *data) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int value = data[idx];
-    
-    // Check if all threads in warp have value > 0
-    int all_positive = __all_sync(0xffffffff, value > 0);
-    
-    // Check if any thread in warp has value > 100
-    int any_large = __any_sync(0xffffffff, value > 100);
-    
-    // Count threads in warp where value is even
-    int even_count = __popc(__ballot_sync(0xffffffff, value % 2 == 0));
-}
-```
-
-### Shared Memory Use Cases
-
-| Use Case | Benefit |
-|----------|---------|
-| **Tile-based algorithms** | Reuse data loaded from global memory |
-| **Reduction operations** | Fast inter-thread communication |
-| **Transpose operations** | Coalesce non-coalesced accesses |
-| **Histogram** | Fast atomic operations |
-| **Prefix sum (scan)** | Parallel cumulative computation |
-
-### Performance Comparison
-
-```cuda
-// Global memory only
-__global__ void withoutShared(float *input, float *output, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
-        float sum = 0;
-        for (int i = -2; i <= 2; i++) {
-            if (idx + i >= 0 && idx + i < n) {
-                sum += input[idx + i];  // 5 global memory reads per thread
-            }
-        }
-        output[idx] = sum / 5.0f;
-    }
-}
-
-// With shared memory
-__global__ void withShared(float *input, float *output, int n) {
-    __shared__ float shared[256 + 4];  // Block size + halo
-    
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int localIdx = threadIdx.x + 2;
-    
-    // Load to shared memory (coalesced)
-    if (idx < n) shared[localIdx] = input[idx];
-    if (threadIdx.x < 2 && idx >= 2) shared[threadIdx.x] = input[idx - 2];
-    if (threadIdx.x < 2 && idx + blockDim.x < n) 
-        shared[localIdx + blockDim.x] = input[idx + blockDim.x];
-    
-    __syncthreads();
-    
-    if (idx < n) {
-        float sum = 0;
-        for (int i = -2; i <= 2; i++) {
-            sum += shared[localIdx + i];  // Fast shared memory reads
-        }
-        output[idx] = sum / 5.0f;
-    }
-}
-// Speedup: ~5-10x faster with shared memory
-```
-
----
-
-## 🐞 Debugging Tools
-
-### CUDA Debugging Strategies
-
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| **printf()** | Simple output debugging | Quick checks, small data |
-| **cuda-gdb** | Command-line debugger | Complex bugs, batch debugging |
-| **Nsight VSCode** | IDE debugging | Interactive debugging, visualization |
-| **compute-sanitizer** | Memory checker | Memory errors, race conditions |
-| **CUDA-MEMCHECK** | Legacy memory checker | Older CUDA versions |
-
-### Printf Debugging
-
-```cuda
-__global__ void debugKernel(float *data, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    // Print from first thread only
-    if (idx == 0) {
-        printf("Kernel launched with %d threads\n", n);
-    }
-    
-    // Conditional debugging
-    if (idx < n && data[idx] < 0) {
-        printf("Thread %d: Negative value %.2f detected\n", idx, data[idx]);
-    }
-    
-    // Debug specific thread
-    if (blockIdx.x == 0 && threadIdx.x == 0) {
-        printf("First thread in first block\n");
-    }
-}
-
-// Flush printf buffer
-cudaDeviceSynchronize();
-```
-
-**Limitations:**
-
-- Output is buffered (may not appear immediately)
-- Can slow down execution significantly
-- Limited buffer size (~1MB)
-
-### cuda-gdb (Command-Line Debugger)
-
-#### Compilation for Debugging
-
-```bash
-# Compile with debug symbols and no optimization
-nvcc -g -G -O0 program.cu -o program_debug
-
-# -g: Host debug symbols
-# -G: Device debug symbols
-# -O0: Disable optimization
-```
-
-#### Basic Commands
-
-```bash
-# Start debugger
-cuda-gdb ./program
-
-# Set breakpoints
-(cuda-gdb) break myKernel                    # Break at kernel
-(cuda-gdb) break program.cu:42               # Break at line
-(cuda-gdb) break myKernel if threadIdx.x==5  # Conditional breakpoint
-
-# Run program
-(cuda-gdb) run
-(cuda-gdb) run arg1 arg2  # With arguments
-
-# Execution control
-(cuda-gdb) continue  # Resume execution
-(cuda-gdb) step      # Step into
-(cuda-gdb) next      # Step over
-(cuda-gdb) finish    # Step out
-
-# Inspect threads
-(cuda-gdb) info cuda threads           # All CUDA threads
-(cuda-gdb) cuda thread 0               # Switch to thread 0
-(cuda-gdb) cuda block 1 thread 5       # Switch to specific thread
-(cuda-gdb) cuda kernel block thread    # Show current focus
-
-# Inspect data
-(cuda-gdb) print variable
-(cuda-gdb) print threadIdx.x
-(cuda-gdb) print shared[threadIdx.x]
-
-# Watch variables
-(cuda-gdb) watch data[100]  # Break when value changes
-
-# Backtrace
-(cuda-gdb) backtrace
-(cuda-gdb) bt
-
-# Quit
-(cuda-gdb) quit
-```
-
-#### Advanced cuda-gdb
-
-```bash
-# Debug specific GPU
-(cuda-gdb) set cuda device 1
-
-# Filter threads
-(cuda-gdb) cuda thread (blockIdx.x == 0 && threadIdx.x < 32)
-
-# Print array elements
-(cuda-gdb) print data[0]@10  # Print first 10 elements
-
-# Examine memory
-(cuda-gdb) x/10fx data  # 10 floats in hex
-
-# Show kernel info
-(cuda-gdb) info cuda kernels
-(cuda-gdb) info cuda blocks
-(cuda-gdb) info cuda warps
-```
-
-### Compute Sanitizer
-
-**Compute Sanitizer** detects:
-
-- Memory access errors (out-of-bounds, uninitialized)
-- Race conditions
-- Memory leaks
-- Shared memory data races
-- Synchronization errors
-
-#### Basic Usage of Sanitizer
-
-```bash
-# Run with all checks
-compute-sanitizer ./program
-
-# Memcheck tool (default)
-compute-sanitizer --tool memcheck ./program
-
-# Race detection
-compute-sanitizer --tool racecheck ./program
-
-# Initialize check
-compute-sanitizer --tool initcheck ./program
-
-# Synchronization check
-compute-sanitizer --tool synccheck ./program
-```
-
-### Error Checking Macro
-
-```cuda
-#define CUDA_CHECK_ERROR() \
-    do { \
-        cudaError_t err = cudaGetLastError(); \
-        if (err != cudaSuccess) { \
-            fprintf(stderr, "CUDA Error: %s at %s:%d\n", \
-                    cudaGetErrorString(err), __FILE__, __LINE__); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while (0)
-
-// Usage after kernel launch
-myKernel<<<grid, block>>>(args);
-CUDA_CHECK_ERROR();
-cudaDeviceSynchronize();
-CUDA_CHECK_ERROR();
-```
-
----
-
-## 🏹 Vector Reduction
-
-### What is Reduction?
-
-**Reduction**: Combining array elements into a single value using an associative operator.
-
-**Examples:**
-
-- Sum: `result = a[0] + a[1] + ... + a[n-1]`
-- Max: `result = max(a[0], a[1], ..., a[n-1])`
-- Product: `result = a[0] * a[1] * ... * a[n-1]`
-
-### Parallel Reduction Strategy
-
-```text
-Step 1: [1,2,3,4,5,6,7,8]
-         ↓ ↓ ↓ ↓
-Step 2: [3,  7,  11, 15]
-         ↓     ↓
-Step 3: [10,     26]
-           ↓
-Step 4:   [36]
-
-Complexity: O(log n) steps with n/2 threads
-```
-
-### Optimized Shared Memory Reduction
-
-```cuda
-__global__ void reduceShared(float *input, float *output, int n) {
-    extern __shared__ float sharedData[];
-    
-    int tid = threadIdx.x;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    // Load data into shared memory
-    sharedData[tid] = (idx < n) ? input[idx] : 0.0f;
-    __syncthreads();
-    
-    // Reduction in shared memory
-    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
-        if (tid < stride) {
-            sharedData[tid] += sharedData[tid + stride];
-        }
-        __syncthreads();
-    }
-    
-    // Write result for this block
-    if (tid == 0) {
-        output[blockIdx.x] = sharedData[0];
-    }
-}
-
-// Launch
-int threadsPerBlock = 256;
-int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
-reduceShared<<<blocksPerGrid, threadsPerBlock, threadsPerBlock * sizeof(float)>>>(d_input, d_output, n);
-```
-
-### Warp-Level Reduction (Shuffle)
-
-```cuda
-__inline__ __device__
-float warpReduce(float val) {
-    for (int offset = 16; offset > 0; offset /= 2) {
-        val += __shfl_down_sync(0xffffffff, val, offset);
-    }
-    return val;
-}
-
-__global__ void reduceWarpShuffle(float *input, float *output, int n) {
-    int tid = threadIdx.x;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    float sum = (idx < n) ? input[idx] : 0.0f;
-    
-    // Warp-level reduction (no shared memory needed!)
-    sum = warpReduce(sum);
-    
-    // First thread in each warp writes to shared memory
-    __shared__ float warpSums[32];  // Max 32 warps per block
-    int lane = threadIdx.x % 32;
-    int warpId = threadIdx.x / 32;
-    
-    if (lane == 0) {
-        warpSums[warpId] = sum;
-    }
-    __syncthreads();
-    
-    // Final reduction by first warp
-    if (warpId == 0) {
-        sum = (tid < blockDim.x / 32) ? warpSums[lane] : 0.0f;
-        sum = warpReduce(sum);
-        
-        if (tid == 0) {
-            output[blockIdx.x] = sum;
-        }
-    }
-}
-```
-
----
-
-## 📏 Roofline Model
-
-### What is the Roofline Model?
-
-The **Roofline Model** is a visual performance model that helps understand:
-
-- **Performance bounds** of your kernel
-- Whether code is **compute-bound** or **memory-bound**
-- **Optimization opportunities**
-
-### Key Concepts about Roofline
-
-#### Arithmetic Intensity (AI)
-
-```text
-Arithmetic Intensity = FLOPs / Bytes Transferred
-
-AI = Operations / Data Movement
-```
-
-**Examples:**
-
-- `y[i] = a * x[i] + y[i]` (SAXPY): AI = 2 FLOPs / 8 bytes = 0.25 FLOP/byte
-- Matrix multiplication: AI ≈ O(N) FLOP/byte (high)
-- Simple addition: AI ≈ 0.125 FLOP/byte (low)
-
-#### Peak Performance
-
-```text
-Peak FLOPs = Max theoretical compute throughput
-```
-
-Example (RTX 3090):
-
-- FP32: 35.6 TFLOPs
-- FP16: 71.2 TFLOPs (with Tensor Cores: 285 TFLOPs)
-
-#### Peak Memory Bandwidth
-
-```text
-Peak Bandwidth = Max memory throughput (GB/s)
-```
-
-Example (RTX 3090):
-
-- Memory Bandwidth: 936 GB/s
-
-### Roofline Formula
-
-```text
-Attainable Performance = min(Peak Compute, Peak Bandwidth × Arithmetic Intensity)
-```
-
-### Ridge Point
-
-```text
-Ridge Point = Peak Compute / Peak Bandwidth
-
-If AI < Ridge Point: Memory Bound
-If AI > Ridge Point: Compute Bound
-```
-
-**Example (A100):**
-
-- Peak FP32: 19.5 TFLOPs = 19,500 GFLOPs
-- Peak Bandwidth: 2 TB/s = 2000 GB/s
-- Ridge Point = 19,500 / 2000 = 9.75 FLOPs/Byte
-
-### Optimization Based on Roofline
-
-**If Memory Bound (AI < Ridge Point):**
-
-- ✅ Use shared memory to reduce global memory access
-- ✅ Improve memory coalescing
-- ✅ Increase data reuse (tiling)
-- ✅ Use texture memory for read-only data
-- ✅ Compress data if possible
-
-**If Compute Bound (AI > Ridge Point):**
-
-- ✅ Use specialized cores (Tensor Cores for FP16/INT8)
-- ✅ Increase instruction-level parallelism
-- ✅ Reduce arithmetic operations
-- ✅ Use FMA (fused multiply-add) instructions
-- ✅ Consider lower precision (FP16 instead of FP32)
+    note right of Stalled
+        Warp releases partition slot
+        Waiting for memory/sync
+        Scheduler picks another warp
+    end note
+```
+
+**Practical Example:**
+
+```cpp
+// Kernel launch
+myKernel<<<4, 512>>>(data);  // 4 blocks, 512 threads each
+
+// Per SM assignment (if 1 SM receives all 4 blocks):
+// Total threads: 4 × 512 = 2048 threads
+// Total warps: 2048 / 32 = 64 warps
+
+// Partition allocation:
+// - Partition 0: Manages 16 warps (8 active, 8 waiting)
+// - Partition 1: Manages 16 warps (8 active, 8 waiting)  
+// - Partition 2: Manages 16 warps (8 active, 8 waiting)
+// - Partition 3: Manages 16 warps (8 active, 8 waiting)
+
+// Warp Scheduler behavior:
+// When Warp 0 in Partition 0 stalls (memory load):
+//   → Warp Scheduler switches to Warp 8 (from waiting pool)
+//   → Keeps execution units busy
+//   → This is "latency hiding"
+```
+
+**Key Scheduling Concepts:**
+
+| Concept | Description | Impact |
+|---------|-------------|--------|
+| **Warp Slots** | Each partition: 8 concurrent warps | Hardware limit per partition |
+| **Warp Pool** | Total warps assigned to partition | Can be > 8, creates waiting pool |
+| **Context Switch** | Scheduler switches between warps | Zero-overhead on GPU |
+| **Latency Hiding** | Execute other warps while one stalls | Critical for performance |
+| **Occupancy** | Active warps / Maximum possible warps | Higher = better latency hiding |
+
+**Why This Matters:**
+
+1. **More Warps = Better Performance (up to a point)**
+   - More warps give scheduler more options
+   - Better latency hiding during memory stalls
+   - But: More warps = more resource usage
+
+2. **Partition Parallelism**
+   - 4 partitions work independently
+   - Can execute 4 different warp instructions simultaneously
+   - Increases throughput
+
+3. **Scheduler Efficiency**
+   - Fast context switching (no overhead)
+   - Monitors dependencies and stalls
+   - Automatically selects best warp to execute
+
+4. **Optimal Configuration**
+   - Enough warps for latency hiding (high occupancy)
+   - Not too many warps (resource contention)
+   - Typically: 32-64 warps per SM is good target
+
+##### **5. Memory Hierarchy:**
+
+- **Registers**: Fastest, per-thread, ~KB per thread
+- **Shared Memory/L1**: Fast, per-block, 64-128 KB per SM
+- **L2 Cache**: Shared across all SMs, several MB
+- **Global Memory**: Largest, slowest, GB to TB (HBM/GDDR)
+
+**Key Performance Characteristics:**
+
+- **Warp**: Group of 32 threads executing in SIMT (Single Instruction, Multiple Thread)
+- **Occupancy**: Number of active warps per SM (affects resource utilization)
+- **Memory Coalescing**: Efficient memory access when threads access contiguous addresses
+- **Bank Conflicts**: Shared memory access conflicts reduce performance
 
 ---
