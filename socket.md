@@ -335,7 +335,339 @@ void run_udp_client(const char *host, const char *port) {
 
 ### B. 🐧 Linux Examples (POSIX/BSD Sockets)
 
-> All Linux samples require `#include <sys/types.h>`, `<sys/socket.h>`, `<netinet/in.h>`, `<arpa/inet.h>`, `<unistd.h>`, and `<fcntl.h>` as needed. Compile with `gcc server.c -o server`.
+#### B-0. Linux Socket Programming Fundamentals
+
+##### B-0-1. Required Header Files
+
+Linux socket programming uses the POSIX/BSD socket API. Understanding which headers to include is essential:
+
+```cpp
+#include <sys/types.h>    // Basic system data types (size_t, ssize_t)
+#include <sys/socket.h>   // Core socket functions: socket(), bind(), listen(), accept(), connect()
+#include <netinet/in.h>   // Internet address structures: sockaddr_in, sockaddr_in6, INADDR_ANY
+#include <arpa/inet.h>    // Internet operations: inet_pton(), inet_ntop(), htons(), ntohs()
+#include <unistd.h>       // UNIX standard: close(), read(), write()
+#include <fcntl.h>        // File control: fcntl() for setting non-blocking mode
+#include <netdb.h>        // Network database: getaddrinfo(), getnameinfo() for DNS resolution
+#include <errno.h>        // Error codes: errno, EWOULDBLOCK, EAGAIN, EINPROGRESS
+#include <string.h>       // String operations: memset(), strlen()
+#include <stdio.h>        // Standard I/O: printf(), perror()
+```
+
+**Header Usage Summary:**
+
+| Header | Primary Functions | When to Use |
+|--------|------------------|-------------|
+| `<sys/socket.h>` | `socket()`, `bind()`, `listen()`, `accept()`, `connect()`, `send()`, `recv()` | **Always** - Core socket operations |
+| `<netinet/in.h>` | `sockaddr_in`, `sockaddr_in6`, `INADDR_ANY`, `in_addr` | **Always** - Internet addressing |
+| `<arpa/inet.h>` | `inet_pton()`, `inet_ntop()`, `htons()`, `ntohs()`, `htonl()`, `ntohl()` | **Always** - Address conversion and byte order |
+| `<unistd.h>` | `close()`, `read()`, `write()` | **Always** - Closing sockets and I/O |
+| `<fcntl.h>` | `fcntl()`, `O_NONBLOCK` | When setting non-blocking mode |
+| `<netdb.h>` | `getaddrinfo()`, `freeaddrinfo()`, `getnameinfo()` | For DNS resolution and protocol-agnostic code |
+| `<errno.h>` | `errno`, error constants | For detailed error handling |
+
+##### B-0-2. Setting Blocking and Non-Blocking Modes
+
+**Blocking Mode (Default):**
+
+- Socket operations **wait** until they complete
+- `recv()` blocks until data arrives
+- `accept()` blocks until a client connects
+- `connect()` blocks until connection established or timeout
+- Simple programming model but can stall threads
+
+**Non-Blocking Mode:**
+
+- Socket operations **return immediately**
+- Returns `-1` with `errno` set to `EAGAIN` or `EWOULDBLOCK` if operation would block
+- Requires polling mechanisms (`select()`, `poll()`, `epoll()`)
+- Enables handling multiple connections in single thread
+
+**How to Set Non-Blocking Mode:**
+
+```cpp
+#include <fcntl.h>
+
+// Method 1: Using fcntl() - Most portable
+int set_nonblocking(int sockfd) {
+    int flags = fcntl(sockfd, F_GETFL, 0);  // Get current flags
+    if (flags == -1) {
+        perror("fcntl F_GETFL");
+        return -1;
+    }
+    
+    flags |= O_NONBLOCK;  // Add non-blocking flag
+    
+    if (fcntl(sockfd, F_SETFL, flags) == -1) {  // Set new flags
+        perror("fcntl F_SETFL");
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Method 2: Using socket() flags (Linux-specific)
+int sock = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+
+// Method 3: Using accept4() for non-blocking client sockets (Linux-specific)
+int client_fd = accept4(listen_sock, (struct sockaddr *)&client, &len, SOCK_NONBLOCK);
+```
+
+**Reverting to Blocking Mode:**
+
+```cpp
+int set_blocking(int sockfd) {
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags == -1) {
+        return -1;
+    }
+    
+    flags &= ~O_NONBLOCK;  // Remove non-blocking flag
+    
+    if (fcntl(sockfd, F_SETFL, flags) == -1) {
+        return -1;
+    }
+    
+    return 0;
+}
+```
+
+**Non-Blocking Behavior Examples:**
+
+```cpp
+// Non-blocking recv() behavior
+char buffer[1024];
+ssize_t bytes = recv(sockfd, buffer, sizeof(buffer), 0);
+
+if (bytes > 0) {
+    // Data received successfully
+    process_data(buffer, bytes);
+} else if (bytes == 0) {
+    // Connection closed by peer
+    close(sockfd);
+} else {  // bytes == -1
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        // No data available right now - not an error
+        // Try again later (use select/poll/epoll)
+    } else {
+        // Real error occurred
+        perror("recv");
+    }
+}
+
+// Non-blocking connect() behavior
+if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) == -1) {
+    if (errno == EINPROGRESS) {
+        // Connection in progress - not an error
+        // Use select() with writefds to wait for completion
+    } else {
+        // Real error
+        perror("connect");
+    }
+}
+```
+
+##### B-0-3. Understanding TCP Server Operation
+
+A TCP server follows a specific sequence of operations to accept and handle client connections:
+
+**Server Lifecycle:**
+
+```mermaid
+graph TD
+    A[1. socket - Create socket] --> B[2. setsockopt - Set options]
+    B --> C[3. bind - Bind to address:port]
+    C --> D[4. listen - Mark as passive socket]
+    D --> E[5. accept - Wait for client]
+    E --> F[6. recv/send - Communicate]
+    F --> G[7. close - Close connection]
+    G --> H{More clients?}
+    H -->|Yes| E
+    H -->|No| I[8. close - Close listening socket]
+```
+
+**Step-by-Step Server Explanation:**
+
+1. **`socket()`** - Create a socket endpoint
+
+   ```cpp
+   int listen_sock = socket(AF_INET,      // IPv4
+                             SOCK_STREAM,  // TCP (connection-oriented)
+                             0);           // Default protocol
+   // Returns: file descriptor (>= 0) on success, -1 on error
+   ```
+
+2. **`setsockopt()`** - Configure socket options (optional but recommended)
+
+   ```cpp
+   int opt = 1;
+   setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+   // SO_REUSEADDR: Allows reusing address immediately after server restart
+   // Prevents "Address already in use" errors
+   ```
+
+3. **`bind()`** - Assign address and port to socket
+
+   ```cpp
+   struct sockaddr_in addr = {0};
+   addr.sin_family = AF_INET;              // IPv4
+   addr.sin_port = htons(8080);            // Port 8080 (network byte order)
+   addr.sin_addr.s_addr = htonl(INADDR_ANY);  // Accept on any interface
+   
+   bind(listen_sock, (struct sockaddr *)&addr, sizeof(addr));
+   // Binds socket to 0.0.0.0:8080 (all interfaces)
+   ```
+
+4. **`listen()`** - Mark socket as passive (accepting connections)
+
+   ```cpp
+   listen(listen_sock, SOMAXCONN);
+   // SOMAXCONN: Maximum backlog queue size
+   // Socket is now ready to accept client connections
+   ```
+
+5. **`accept()`** - Accept incoming client connection (blocks until client arrives)
+
+   ```cpp
+   struct sockaddr_in client;
+   socklen_t len = sizeof(client);
+   int client_sock = accept(listen_sock, (struct sockaddr *)&client, &len);
+   // Returns: new socket for this client, original listen_sock remains open
+   // client structure now contains client's IP and port
+   ```
+
+6. **`recv()`/`send()`** - Communicate with client
+
+   ```cpp
+   char buffer[1024];
+   ssize_t bytes = recv(client_sock, buffer, sizeof(buffer), 0);  // Receive data
+   send(client_sock, buffer, bytes, 0);                           // Echo back
+   ```
+
+7. **`close()`** - Close connection
+
+   ```cpp
+   shutdown(client_sock, SHUT_RDWR);  // Graceful shutdown (optional)
+   close(client_sock);                 // Free resources
+   ```
+
+##### B-0-4. Understanding TCP Client Operation
+
+A TCP client connects to a server and exchanges data:
+
+**Client Lifecycle:**
+
+```mermaid
+graph TD
+    A[1. socket - Create socket] --> B[2. connect - Connect to server]
+    B --> C[3. send - Send data]
+    C --> D[4. recv - Receive response]
+    D --> E[5. close - Close connection]
+```
+
+**Step-by-Step Client Explanation:**
+
+1. **`socket()`** - Create a socket
+
+   ```cpp
+   int sock = socket(AF_INET, SOCK_STREAM, 0);
+   ```
+
+2. **`connect()`** - Establish connection to server
+
+   ```cpp
+   struct sockaddr_in server = {0};
+   server.sin_family = AF_INET;
+   server.sin_port = htons(8080);
+   inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);  // Server IP
+   
+   connect(sock, (struct sockaddr *)&server, sizeof(server));
+   // Blocks until connected or error
+   // Three-way handshake (SYN, SYN-ACK, ACK) happens here
+   ```
+
+3. **`send()`/`recv()`** - Exchange data
+
+   ```cpp
+   const char *msg = "Hello Server";
+   send(sock, msg, strlen(msg), 0);
+   
+   char buffer[1024];
+   ssize_t bytes = recv(sock, buffer, sizeof(buffer), 0);
+   ```
+
+4. **`close()`** - Terminate connection
+
+   ```cpp
+   close(sock);  // Sends FIN packet, closes connection
+   ```
+
+##### B-0-5. Error Handling on Linux
+
+Proper error handling is critical for robust socket applications:
+
+```cpp
+#include <errno.h>
+#include <string.h>
+
+// Check socket creation
+int sock = socket(AF_INET, SOCK_STREAM, 0);
+if (sock < 0) {
+    perror("socket");  // Prints: "socket: <error message>"
+    // Or manually:
+    fprintf(stderr, "socket failed: %s\n", strerror(errno));
+    return -1;
+}
+
+// Check recv/send operations
+ssize_t bytes = recv(sock, buffer, size, 0);
+if (bytes < 0) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        // Non-blocking socket, no data available
+    } else if (errno == EINTR) {
+        // Interrupted by signal, retry
+    } else if (errno == ECONNRESET) {
+        // Connection reset by peer
+        close(sock);
+    } else {
+        perror("recv");
+    }
+} else if (bytes == 0) {
+    // Connection closed gracefully by peer
+    close(sock);
+}
+```
+
+**Common Error Codes:**
+
+| Error | Constant | Meaning |
+|-------|----------|---------|
+| **EWOULDBLOCK / EAGAIN** | 11 | Non-blocking operation would block |
+| **EINTR** | 4 | System call interrupted by signal |
+| **ECONNRESET** | 104 | Connection reset by peer |
+| **EPIPE** | 32 | Broken pipe (write to closed socket) |
+| **ETIMEDOUT** | 110 | Connection timed out |
+| **ECONNREFUSED** | 111 | Connection refused (no server listening) |
+| **EADDRINUSE** | 98 | Address already in use |
+
+##### B-0-6. Compiling Linux Socket Programs
+
+```bash
+# Basic compilation
+gcc server.c -o server
+
+# With warnings enabled (recommended)
+gcc -Wall -Wextra -O2 server.c -o server
+
+# With debugging symbols
+gcc -g -Wall server.c -o server
+
+# Link with pthread for multi-threaded servers
+gcc -Wall server.c -o server -lpthread
+
+# C++ compilation
+g++ -Wall -Wextra -std=c++11 server.cpp -o server
+```
 
 #### B-1. TCP Single-Client Server
 
