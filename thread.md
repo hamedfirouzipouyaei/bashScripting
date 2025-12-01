@@ -1,4 +1,4 @@
-# C++ Threading Tutorial
+# 🧵🪡 C++ Threading Tutorial
 
 A comprehensive guide to understanding and implementing multithreading in C++ using `std::thread` from C++11.
 
