@@ -1,5 +1,0 @@
-# Ultimate CUDA Programming Cheat book
-
-This was just for messing with Nima
-
-💥 Fuck CUDA
