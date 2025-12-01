@@ -1,4 +1,163 @@
-# C++ Programming Guide
+# 🇨➕➕ Programming Guide
+
+## 📋 Table of Contents
+
+- [🇨➕➕ Programming Guide](#-programming-guide)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [1. Variables and Constants](#1-variables-and-constants)
+    - [Why Use Variables and Constants?](#why-use-variables-and-constants)
+    - [Variable Declaration](#variable-declaration)
+    - [Constants](#constants)
+  - [2. Arrays and Vectors](#2-arrays-and-vectors)
+    - [Why Arrays vs Vectors?](#why-arrays-vs-vectors)
+    - [C-Style Arrays](#c-style-arrays)
+    - [std::array (C++11)](#stdarray-c11)
+    - [std::vector](#stdvector)
+  - [3. Statements and Operators](#3-statements-and-operators)
+    - [Why Understand Operators?](#why-understand-operators)
+    - [Arithmetic Operators](#arithmetic-operators)
+    - [Comparison Operators](#comparison-operators)
+    - [Logical Operators](#logical-operators)
+    - [Bitwise Operators](#bitwise-operators)
+    - [Ternary Operator](#ternary-operator)
+  - [4. Controlling Program Flow](#4-controlling-program-flow)
+    - [Why Control Flow?](#why-control-flow)
+    - [Conditional Statements](#conditional-statements)
+      - [if-else](#if-else)
+      - [switch Statement](#switch-statement)
+    - [Loops](#loops)
+      - [for Loop](#for-loop)
+      - [while Loop](#while-loop)
+      - [do-while Loop](#do-while-loop)
+    - [Loop Control](#loop-control)
+    - [Modern Control Flow (C++17)](#modern-control-flow-c17)
+      - [if with initializer](#if-with-initializer)
+  - [5. Characters and Strings](#5-characters-and-strings)
+    - [Why Different String Types?](#why-different-string-types)
+    - [Characters](#characters)
+    - [C-Style Strings (Character Arrays)](#c-style-strings-character-arrays)
+    - [std::string (Modern C++)](#stdstring-modern-c)
+    - [String Streams](#string-streams)
+    - [String Iteration](#string-iteration)
+    - [Why Use std::string?](#why-use-stdstring)
+  - [6. Functions](#6-functions)
+    - [Why Use Functions?](#why-use-functions)
+    - [Function Structure](#function-structure)
+    - [Function Declaration vs Definition](#function-declaration-vs-definition)
+    - [Parameter Passing](#parameter-passing)
+      - [Pass by Value (Copy)](#pass-by-value-copy)
+      - [Pass by Reference](#pass-by-reference)
+      - [Pass by Const Reference](#pass-by-const-reference)
+      - [Pass by Pointer](#pass-by-pointer)
+    - [Function Overloading](#function-overloading)
+    - [Default Arguments](#default-arguments)
+    - [Inline Functions](#inline-functions)
+    - [Lambda Functions (C++11)](#lambda-functions-c11)
+    - [Return Values](#return-values)
+    - [Function Pointers (Advanced)](#function-pointers-advanced)
+  - [7. Pointers and References](#7-pointers-and-references)
+    - [Why Pointers and References?](#why-pointers-and-references)
+    - [Understanding Memory](#understanding-memory)
+    - [Pointers - The Basics](#pointers---the-basics)
+      - [What is a Pointer?](#what-is-a-pointer)
+      - [Key Operators](#key-operators)
+    - [Pointer Declaration and Initialization](#pointer-declaration-and-initialization)
+    - [Null Pointers and Safety](#null-pointers-and-safety)
+    - [Pointers and Arrays](#pointers-and-arrays)
+    - [Dynamic Memory Allocation](#dynamic-memory-allocation)
+      - [new and delete](#new-and-delete)
+      - [Smart Pointers (C++11) - PREFER THESE](#smart-pointers-c11---prefer-these)
+    - [References - The Safe Alternative](#references---the-safe-alternative)
+      - [What is a Reference?](#what-is-a-reference)
+      - [References vs Pointers](#references-vs-pointers)
+      - [When to Use References](#when-to-use-references)
+    - [Const with Pointers and References](#const-with-pointers-and-references)
+    - [Double Pointers (Pointers to Pointers)](#double-pointers-pointers-to-pointers)
+    - [Common Pitfalls and Best Practices](#common-pitfalls-and-best-practices)
+      - [1. Memory Leaks](#1-memory-leaks)
+      - [2. Dangling Pointers](#2-dangling-pointers)
+      - [3. Null Pointer Dereference](#3-null-pointer-dereference)
+      - [4. Mismatched new/delete](#4-mismatched-newdelete)
+    - [Summary: Pointers vs References](#summary-pointers-vs-references)
+  - [8. Object-Oriented Programming (OOP)](#8-object-oriented-programming-oop)
+    - [Why OOP?](#why-oop)
+    - [Classes and Objects](#classes-and-objects)
+      - [Basic Class Structure](#basic-class-structure)
+    - [Access Specifiers](#access-specifiers)
+    - [Constructors - CRITICAL TOPIC](#constructors---critical-topic)
+      - [Default Constructor](#default-constructor)
+      - [Parameterized Constructor](#parameterized-constructor)
+      - [Constructor Overloading](#constructor-overloading)
+      - [The explicit Keyword - ESSENTIAL TOPIC](#the-explicit-keyword---essential-topic)
+        - [The Problem: Implicit Conversions](#the-problem-implicit-conversions)
+        - [The Solution: explicit Keyword](#the-solution-explicit-keyword)
+        - [When to Use explicit](#when-to-use-explicit)
+        - [Explicit with Multiple Parameters (C++11)](#explicit-with-multiple-parameters-c11)
+        - [Real-World Examples](#real-world-examples)
+          - [Example 1: File Handle (explicit is CRITICAL)](#example-1-file-handle-explicit-is-critical)
+          - [Example 2: Vector (explicit prevents logic errors)](#example-2-vector-explicit-prevents-logic-errors)
+          - [Example 3: Smart Pointer Wrapper](#example-3-smart-pointer-wrapper)
+        - [Explicit Conversion Operators (C++11)](#explicit-conversion-operators-c11)
+        - [Summary Table: explicit Usage](#summary-table-explicit-usage)
+        - [Best Practices - The explicit Rule](#best-practices---the-explicit-rule)
+        - [Memory Aid: When to Use explicit](#memory-aid-when-to-use-explicit)
+        - [Quick Reference - explicit Syntax](#quick-reference---explicit-syntax)
+      - [Copy Constructor](#copy-constructor)
+      - [Move Constructor (C++11)](#move-constructor-c11)
+    - [The Rule of Three/Five/Zero - ESSENTIAL](#the-rule-of-threefivezero---essential)
+    - [Destructor - Memory Management](#destructor---memory-management)
+    - [Inheritance](#inheritance)
+      - [Basic Inheritance](#basic-inheritance)
+    - [Polymorphism - Runtime Flexibility](#polymorphism---runtime-flexibility)
+    - [Virtual Destructor - ESSENTIAL](#virtual-destructor---essential)
+    - [Abstract Classes and Interfaces](#abstract-classes-and-interfaces)
+    - [Static Members](#static-members)
+    - [Const Member Functions](#const-member-functions)
+  - [9. Operator Overloading](#9-operator-overloading)
+    - [Why Overload Operators?](#why-overload-operators)
+    - [Basic Operator Overloading](#basic-operator-overloading)
+    - [Member vs Non-Member Operators](#member-vs-non-member-operators)
+      - [Member Function (Left operand is \*this)](#member-function-left-operand-is-this)
+      - [Non-Member Friend Function (Symmetric operations)](#non-member-friend-function-symmetric-operations)
+    - [Comparison Operators (overloaded)](#comparison-operators-overloaded)
+    - [Assignment Operator - CRITICAL](#assignment-operator---critical)
+    - [Stream Operators (\<\<, \>\>)](#stream-operators--)
+    - [Subscript Operator \[\]](#subscript-operator-)
+    - [Function Call Operator () - Functors](#function-call-operator----functors)
+    - [Increment/Decrement Operators](#incrementdecrement-operators)
+    - [Arrow Operator -\> (Smart Pointers)](#arrow-operator---smart-pointers)
+    - [Type Conversion Operators](#type-conversion-operators)
+    - [Operators You CANNOT Overload](#operators-you-cannot-overload)
+    - [Best Practices and Pitfalls](#best-practices-and-pitfalls)
+      - [**DO**](#do)
+      - [**DON'T**](#dont)
+    - [Complete Example - Vector Class](#complete-example---vector-class)
+  - [10. Exception Handling and Error Management](#10-exception-handling-and-error-management)
+    - [Why Exception Handling?](#why-exception-handling)
+    - [Basic Exception Handling: try-catch-throw](#basic-exception-handling-try-catch-throw)
+      - [Throwing Exceptions](#throwing-exceptions)
+      - [Catching Exceptions](#catching-exceptions)
+      - [Exception Propagation](#exception-propagation)
+    - [Standard Exception Types](#standard-exception-types)
+    - [Custom Exceptions](#custom-exceptions)
+    - [Exception Specifications: noexcept](#exception-specifications-noexcept)
+    - [RAII and Exception Safety](#raii-and-exception-safety)
+    - [Modern Error Handling (C++23)](#modern-error-handling-c23)
+      - [std::expected - Deterministic Error Handling](#stdexpected---deterministic-error-handling)
+      - [Complete Example with std::expected](#complete-example-with-stdexpected)
+    - [Enumerations for Error Codes](#enumerations-for-error-codes)
+      - [Basic Enums](#basic-enums)
+      - [Enum Classes (C++11) - PREFERRED](#enum-classes-c11---preferred)
+      - [Enum with String Conversion](#enum-with-string-conversion)
+      - [Using Enums with std::expected](#using-enums-with-stdexpected)
+      - [Error Code Class Pattern](#error-code-class-pattern)
+    - [Exception Handling Best Practices](#exception-handling-best-practices)
+      - [DO ✅](#do-)
+      - [DON'T ❌](#dont-)
+      - [Exception Safety Guidelines](#exception-safety-guidelines)
+  - [11. Quick Reference](#11-quick-reference)
+
+---
 
 ## 1. Variables and Constants
 
@@ -3183,7 +3342,865 @@ v1[0] = 10;                      // x = 10
 
 ---
 
-## Quick Reference
+## 10. Exception Handling and Error Management
+
+### Why Exception Handling?
+
+Exception handling provides a structured way to deal with runtime errors and exceptional conditions:
+
+- **Separation of Concerns**: Error handling code is separated from normal logic
+- **Propagation**: Errors propagate up the call stack automatically
+- **Resource Safety**: RAII ensures cleanup even when exceptions occur
+- **Type Safety**: Different exception types for different error conditions
+- **Mandatory Handling**: Unlike error codes, exceptions can't be silently ignored
+
+**When to use exceptions:**
+
+- Constructor failures (can't return error codes)
+- Unexpected runtime errors (file not found, out of memory)
+- Violations of preconditions or invariants
+- Operations that rarely fail
+
+**When NOT to use exceptions:**
+
+- Normal control flow
+- Performance-critical code (exceptions have overhead)
+- Expected conditions (use return codes or `std::optional`)
+- Across library boundaries (C APIs)
+
+---
+
+### Basic Exception Handling: try-catch-throw
+
+#### Throwing Exceptions
+
+```cpp
+#include <stdexcept>
+#include <string>
+
+double divide(double a, double b) {
+    if (b == 0.0) {
+        throw std::invalid_argument("Division by zero");
+    }
+    return a / b;
+}
+
+int getArrayElement(const std::vector<int>& arr, size_t index) {
+    if (index >= arr.size()) {
+        throw std::out_of_range("Index out of bounds: " + std::to_string(index));
+    }
+    return arr[index];
+}
+
+void processFile(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + filename);
+    }
+    // Process file...
+}
+```
+
+#### Catching Exceptions
+
+```cpp
+// Basic try-catch
+void example1() {
+    try {
+        double result = divide(10.0, 0.0);
+        std::cout << result << std::endl;
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+}
+
+// Multiple catch blocks
+void example2() {
+    try {
+        std::vector<int> vec = {1, 2, 3};
+        int value = getArrayElement(vec, 10);
+    } catch (const std::out_of_range& e) {
+        std::cerr << "Range error: " << e.what() << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "General error: " << e.what() << std::endl;
+    }
+}
+
+// Catch all exceptions
+void example3() {
+    try {
+        riskyOperation();
+    } catch (const std::exception& e) {
+        // Catches all standard exceptions
+        std::cerr << "Standard exception: " << e.what() << std::endl;
+    } catch (...) {
+        // Catches everything else (non-standard exceptions)
+        std::cerr << "Unknown exception caught" << std::endl;
+    }
+}
+
+// Re-throwing exceptions
+void example4() {
+    try {
+        processData();
+    } catch (const std::exception& e) {
+        logError(e.what());
+        throw;  // Re-throw the same exception
+    }
+}
+```
+
+#### Exception Propagation
+
+```cpp
+void level3() {
+    throw std::runtime_error("Error at level 3");
+}
+
+void level2() {
+    level3();  // Exception propagates through here
+}
+
+void level1() {
+    try {
+        level2();  // Exception caught here
+    } catch (const std::exception& e) {
+        std::cout << "Caught: " << e.what() << std::endl;
+    }
+}
+
+// Stack unwinding: destructors are called for all objects
+// created between throw and catch
+```
+
+---
+
+### Standard Exception Types
+
+C++ provides a hierarchy of standard exception classes in `<stdexcept>`:
+
+```cpp
+#include <stdexcept>
+#include <exception>
+
+// Exception hierarchy:
+// std::exception (base class)
+//   ├── std::logic_error (programming errors, preventable)
+//   │   ├── std::invalid_argument
+//   │   ├── std::domain_error
+//   │   ├── std::length_error
+//   │   ├── std::out_of_range
+//   │   └── std::future_error (C++11)
+//   │
+//   └── std::runtime_error (runtime issues, not preventable)
+//       ├── std::range_error
+//       ├── std::overflow_error
+//       ├── std::underflow_error
+//       └── std::system_error (C++11)
+```
+
+**Common Standard Exceptions:**
+
+```cpp
+// std::invalid_argument - Invalid function argument
+void setAge(int age) {
+    if (age < 0 || age > 150) {
+        throw std::invalid_argument("Age must be between 0 and 150");
+    }
+}
+
+// std::out_of_range - Index out of valid range
+int& at(std::vector<int>& vec, size_t index) {
+    if (index >= vec.size()) {
+        throw std::out_of_range("Index out of range");
+    }
+    return vec[index];
+}
+
+// std::length_error - Object too long
+void resize(std::string& str, size_t new_size) {
+    if (new_size > str.max_size()) {
+        throw std::length_error("Requested size exceeds maximum");
+    }
+}
+
+// std::runtime_error - General runtime errors
+void openFile(const std::string& path) {
+    if (!fileExists(path)) {
+        throw std::runtime_error("File not found: " + path);
+    }
+}
+
+// std::bad_alloc - Memory allocation failure
+try {
+    int* huge = new int[1000000000000];  // Likely to fail
+} catch (const std::bad_alloc& e) {
+    std::cerr << "Memory allocation failed: " << e.what() << std::endl;
+}
+
+// std::bad_cast - dynamic_cast failure
+try {
+    Base* b = new Derived();
+    OtherClass& oc = dynamic_cast<OtherClass&>(*b);
+} catch (const std::bad_cast& e) {
+    std::cerr << "Invalid cast: " << e.what() << std::endl;
+}
+```
+
+---
+
+### Custom Exceptions
+
+Create custom exception classes for domain-specific errors:
+
+```cpp
+// Inherit from std::exception or its derived classes
+class FileException : public std::runtime_error {
+public:
+    explicit FileException(const std::string& filename)
+        : std::runtime_error("File error: " + filename),
+          filename_(filename) {}
+    
+    const std::string& getFilename() const { return filename_; }
+    
+private:
+    std::string filename_;
+};
+
+class NetworkException : public std::runtime_error {
+public:
+    enum class ErrorCode { CONNECTION_FAILED, TIMEOUT, INVALID_RESPONSE };
+    
+    NetworkException(ErrorCode code, const std::string& message)
+        : std::runtime_error(message), code_(code) {}
+    
+    ErrorCode getErrorCode() const { return code_; }
+    
+private:
+    ErrorCode code_;
+};
+
+// Usage
+void downloadFile(const std::string& url) {
+    if (!connectToServer(url)) {
+        throw NetworkException(
+            NetworkException::ErrorCode::CONNECTION_FAILED,
+            "Cannot connect to " + url
+        );
+    }
+}
+
+void handleDownload() {
+    try {
+        downloadFile("http://example.com/file.txt");
+    } catch (const NetworkException& e) {
+        std::cerr << "Network error: " << e.what() << std::endl;
+        if (e.getErrorCode() == NetworkException::ErrorCode::TIMEOUT) {
+            // Retry logic
+        }
+    } catch (const FileException& e) {
+        std::cerr << "File error for: " << e.getFilename() << std::endl;
+    }
+}
+```
+
+**Best Practice for Custom Exceptions:**
+
+```cpp
+// Always inherit from std::exception or derived classes
+class MyException : public std::exception {
+public:
+    explicit MyException(const std::string& msg) : message_(msg) {}
+    
+    // Override what() - CRITICAL
+    const char* what() const noexcept override {
+        return message_.c_str();
+    }
+    
+private:
+    std::string message_;
+};
+```
+
+---
+
+### Exception Specifications: noexcept
+
+**C++11 introduced `noexcept` to specify exception guarantees:**
+
+```cpp
+// Function guaranteed not to throw
+void safeFunction() noexcept {
+    // If an exception escapes, std::terminate() is called
+}
+
+// Conditional noexcept
+template<typename T>
+void swap(T& a, T& b) noexcept(noexcept(T(std::move(a)))) {
+    T tmp(std::move(a));
+    a = std::move(b);
+    b = std::move(tmp);
+}
+
+// Check if function is noexcept at compile time
+template<typename T>
+class Vector {
+    // Move constructor is noexcept only if T's move is noexcept
+    Vector(Vector&& other) noexcept(std::is_nothrow_move_constructible<T>::value) {
+        // ...
+    }
+};
+```
+
+**Why use noexcept:**
+
+1. **Performance**: Compiler can optimize better
+2. **Move Semantics**: STL containers use move only if noexcept
+3. **Destructors**: Should always be noexcept (implicit)
+4. **Swap Operations**: Critical for exception safety
+
+```cpp
+// Move constructor example
+class String {
+    char* data_;
+    size_t size_;
+    
+public:
+    // Move is noexcept - enables optimizations
+    String(String&& other) noexcept
+        : data_(other.data_), size_(other.size_) {
+        other.data_ = nullptr;
+        other.size_ = 0;
+    }
+    
+    // Destructor is implicitly noexcept
+    ~String() {
+        delete[] data_;
+    }
+};
+```
+
+**What should be noexcept:**
+
+- Destructors (always)
+- Move constructors and move assignment
+- Swap functions
+- Simple getters
+- Operations guaranteed not to fail
+
+---
+
+### RAII and Exception Safety
+
+**RAII (Resource Acquisition Is Initialization)** ensures resources are properly cleaned up even when exceptions occur:
+
+```cpp
+// BAD - Resource leak on exception
+void badExample() {
+    int* data = new int[100];
+    processData(data);  // If this throws, memory leaked
+    delete[] data;
+}
+
+// GOOD - RAII with smart pointers
+void goodExample() {
+    auto data = std::make_unique<int[]>(100);
+    processData(data.get());  // Exception safe - destructor called
+}
+
+// RAII class example
+class FileHandle {
+    FILE* file_;
+    
+public:
+    explicit FileHandle(const char* filename)
+        : file_(fopen(filename, "r")) {
+        if (!file_) {
+            throw std::runtime_error("Cannot open file");
+        }
+    }
+    
+    ~FileHandle() {
+        if (file_) {
+            fclose(file_);
+        }
+    }
+    
+    // Delete copy, enable move
+    FileHandle(const FileHandle&) = delete;
+    FileHandle& operator=(const FileHandle&) = delete;
+    FileHandle(FileHandle&& other) noexcept : file_(other.file_) {
+        other.file_ = nullptr;
+    }
+    
+    FILE* get() const { return file_; }
+};
+
+// Usage - exception safe
+void useFile() {
+    FileHandle file("data.txt");
+    processFile(file.get());  // Exception safe - file auto-closed
+}
+```
+
+**Exception Safety Guarantees:**
+
+| Level | Guarantee | Description |
+|-------|-----------|-------------|
+| **No guarantee** | ❌ | Resources may leak, objects in invalid state |
+| **Basic guarantee** | ✅ | No resource leaks, objects in valid (but unspecified) state |
+| **Strong guarantee** | ✅✅ | Operation succeeds completely or has no effect (transactional) |
+| **No-throw guarantee** | ✅✅✅ | Operation guaranteed not to throw (`noexcept`) |
+
+```cpp
+// Strong guarantee example - commit or rollback
+class Vector {
+    int* data_;
+    size_t size_;
+    
+public:
+    void push_back(int value) {
+        // Strong guarantee: either succeeds completely or no change
+        int* new_data = new int[size_ + 1];  // May throw
+        
+        std::copy(data_, data_ + size_, new_data);  // noexcept with int
+        new_data[size_] = value;
+        
+        delete[] data_;  // Only after success
+        data_ = new_data;
+        ++size_;
+    }
+};
+```
+
+---
+
+### Modern Error Handling (C++23)
+
+#### std::expected - Deterministic Error Handling
+
+**C++23 introduces `std::expected<T, E>`** - a type that contains either a value or an error:
+
+```cpp
+#include <expected>  // C++23
+#include <string>
+
+// Return value or error without exceptions
+std::expected<int, std::string> divide(int a, int b) {
+    if (b == 0) {
+        return std::unexpected("Division by zero");  // Error path
+    }
+    return a / b;  // Success path
+}
+
+// Usage
+void example() {
+    auto result = divide(10, 2);
+    
+    if (result.has_value()) {
+        std::cout << "Result: " << result.value() << std::endl;  // 5
+    } else {
+        std::cerr << "Error: " << result.error() << std::endl;
+    }
+    
+    // Or use value_or with default
+    int value = divide(10, 0).value_or(-1);  // Returns -1 on error
+}
+
+// Chaining operations
+std::expected<double, std::string> calculate(int a, int b) {
+    auto div_result = divide(a, b);
+    if (!div_result) {
+        return std::unexpected(div_result.error());
+    }
+    return div_result.value() * 2.0;
+}
+
+// Using and_then for monadic operations
+std::expected<int, std::string> parseAndDivide(const std::string& num_str) {
+    return parseInt(num_str)
+        .and_then([](int num) { return divide(100, num); });
+}
+```
+
+**Why use std::expected:**
+
+✅ **Deterministic** - No stack unwinding, predictable performance  
+✅ **Type-safe** - Error type is part of function signature  
+✅ **Composable** - Chain operations with `and_then`, `or_else`, `transform`  
+✅ **Zero-overhead** - When successful, no extra cost  
+✅ **Clear intent** - Caller must check result  
+
+**When to use std::expected vs exceptions:**
+
+| Use `std::expected` | Use exceptions |
+|---------------------|----------------|
+| Expected errors (parsing, validation) | Unexpected errors (OOM, hardware) |
+| Performance-critical paths | Constructor failures |
+| Error handling is local | Errors propagate far |
+| Simple error types | Complex error hierarchies |
+| C-compatible boundaries | Pure C++ code |
+
+#### Complete Example with std::expected
+
+```cpp
+#include <expected>
+#include <string>
+#include <fstream>
+
+enum class FileError {
+    NOT_FOUND,
+    PERMISSION_DENIED,
+    IO_ERROR
+};
+
+std::expected<std::string, FileError> readFile(const std::string& path) {
+    std::ifstream file(path);
+    
+    if (!file.is_open()) {
+        if (errno == ENOENT) {
+            return std::unexpected(FileError::NOT_FOUND);
+        } else if (errno == EACCES) {
+            return std::unexpected(FileError::PERMISSION_DENIED);
+        }
+        return std::unexpected(FileError::IO_ERROR);
+    }
+    
+    std::string content((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+    return content;
+}
+
+void processFile(const std::string& path) {
+    auto result = readFile(path);
+    
+    if (result) {
+        std::cout << "File content: " << *result << std::endl;
+    } else {
+        switch (result.error()) {
+            case FileError::NOT_FOUND:
+                std::cerr << "File not found" << std::endl;
+                break;
+            case FileError::PERMISSION_DENIED:
+                std::cerr << "Permission denied" << std::endl;
+                break;
+            case FileError::IO_ERROR:
+                std::cerr << "I/O error" << std::endl;
+                break;
+        }
+    }
+}
+```
+
+---
+
+### Enumerations for Error Codes
+
+**Enumerations provide type-safe error codes**, often used with `std::expected` or as exception data:
+
+#### Basic Enums
+
+```cpp
+// Traditional enum (C-style)
+enum ErrorCode {
+    SUCCESS = 0,
+    FILE_NOT_FOUND = 1,
+    PERMISSION_DENIED = 2,
+    NETWORK_ERROR = 3
+};
+
+// Problem: Not type-safe, implicit int conversion
+int error = FILE_NOT_FOUND;  // OK, but dangerous
+```
+
+#### Enum Classes (C++11) - PREFERRED
+
+```cpp
+// Strongly-typed enum class
+enum class Status {
+    Success,
+    FileNotFound,
+    PermissionDenied,
+    NetworkError,
+    Timeout
+};
+
+// Type-safe, no implicit conversions
+Status status = Status::Success;
+// int x = Status::Success;  // ERROR - won't compile
+int x = static_cast<int>(Status::Success);  // Explicit cast required
+
+// Specify underlying type
+enum class ErrorCode : uint8_t {
+    Success = 0,
+    Warning = 1,
+    Error = 2,
+    Critical = 3
+};
+```
+
+#### Enum with String Conversion
+
+```cpp
+enum class HttpStatus {
+    OK = 200,
+    NotFound = 404,
+    InternalError = 500
+};
+
+// Convert enum to string
+const char* toString(HttpStatus status) {
+    switch (status) {
+        case HttpStatus::OK: return "OK";
+        case HttpStatus::NotFound: return "Not Found";
+        case HttpStatus::InternalError: return "Internal Server Error";
+        default: return "Unknown";
+    }
+}
+
+// Usage
+HttpStatus status = HttpStatus::NotFound;
+std::cout << toString(status) << std::endl;  // "Not Found"
+```
+
+#### Using Enums with std::expected
+
+```cpp
+enum class ParseError {
+    EmptyString,
+    InvalidFormat,
+    OutOfRange
+};
+
+std::expected<int, ParseError> parseInt(const std::string& str) {
+    if (str.empty()) {
+        return std::unexpected(ParseError::EmptyString);
+    }
+    
+    try {
+        size_t pos;
+        int value = std::stoi(str, &pos);
+        
+        if (pos != str.length()) {
+            return std::unexpected(ParseError::InvalidFormat);
+        }
+        
+        return value;
+    } catch (const std::out_of_range&) {
+        return std::unexpected(ParseError::OutOfRange);
+    } catch (...) {
+        return std::unexpected(ParseError::InvalidFormat);
+    }
+}
+
+// Usage
+auto result = parseInt("42");
+if (result) {
+    std::cout << "Parsed: " << *result << std::endl;
+} else {
+    switch (result.error()) {
+        case ParseError::EmptyString:
+            std::cerr << "Empty string" << std::endl;
+            break;
+        case ParseError::InvalidFormat:
+            std::cerr << "Invalid number format" << std::endl;
+            break;
+        case ParseError::OutOfRange:
+            std::cerr << "Number out of range" << std::endl;
+            break;
+    }
+}
+```
+
+#### Error Code Class Pattern
+
+```cpp
+class ErrorCode {
+public:
+    enum class Category { Success, Warning, Error, Fatal };
+    enum class Code {
+        OK,
+        FileNotFound,
+        NetworkTimeout,
+        InvalidInput,
+        OutOfMemory
+    };
+    
+    ErrorCode(Code code) : code_(code) {}
+    
+    Category category() const {
+        switch (code_) {
+            case Code::OK:
+                return Category::Success;
+            case Code::FileNotFound:
+            case Code::NetworkTimeout:
+                return Category::Warning;
+            case Code::InvalidInput:
+                return Category::Error;
+            case Code::OutOfMemory:
+                return Category::Fatal;
+        }
+    }
+    
+    const char* message() const {
+        switch (code_) {
+            case Code::OK: return "Success";
+            case Code::FileNotFound: return "File not found";
+            case Code::NetworkTimeout: return "Network timeout";
+            case Code::InvalidInput: return "Invalid input";
+            case Code::OutOfMemory: return "Out of memory";
+        }
+    }
+    
+    Code code() const { return code_; }
+    
+private:
+    Code code_;
+};
+
+// Usage
+std::expected<Data, ErrorCode> loadData(const std::string& path) {
+    if (!fileExists(path)) {
+        return std::unexpected(ErrorCode::Code::FileNotFound);
+    }
+    // ...
+    return data;
+}
+```
+
+---
+
+### Exception Handling Best Practices
+
+#### DO ✅
+
+```cpp
+// 1. Catch by const reference
+try {
+    riskyOperation();
+} catch (const std::exception& e) {  // Const reference - no copy
+    handleError(e);
+}
+
+// 2. Use specific exceptions
+if (age < 0) {
+    throw std::invalid_argument("Age cannot be negative");
+}
+
+// 3. Provide meaningful messages
+throw std::runtime_error(
+    "Failed to open file '" + filename + "': " + strerror(errno)
+);
+
+// 4. Use RAII for resource management
+auto file = std::make_unique<FileHandle>("data.txt");
+// Exception safe - file automatically closed
+
+// 5. Document exception behavior
+/**
+ * @throws std::invalid_argument if divisor is zero
+ * @throws std::overflow_error if result exceeds INT_MAX
+ */
+int divide(int a, int b);
+
+// 6. Use noexcept where appropriate
+void swap(int& a, int& b) noexcept {
+    int temp = a;
+    a = b;
+    b = temp;
+}
+```
+
+#### DON'T ❌
+
+```cpp
+// 1. Don't catch by value (causes slicing)
+try {
+    operation();
+} catch (std::exception e) {  // BAD - copies, loses derived info
+    // ...
+}
+
+// 2. Don't throw in destructors
+~MyClass() {
+    // throw std::exception("Error");  // BAD - std::terminate()
+}
+
+// 3. Don't throw raw types
+throw "error";        // BAD - use std::exception
+throw 42;             // BAD - use std::exception
+
+// 4. Don't use exceptions for control flow
+while (true) {
+    try {
+        int value = getNext();
+        process(value);
+    } catch (EndOfData&) {
+        break;  // BAD - use return value or iterator
+    }
+}
+
+// 5. Don't ignore exceptions
+try {
+    criticalOperation();
+} catch (...) {
+    // Empty catch - BAD! Error silently ignored
+}
+
+// 6. Don't throw from noexcept functions
+void func() noexcept {
+    throw std::exception();  // Calls std::terminate()
+}
+```
+
+#### Exception Safety Guidelines
+
+```cpp
+// Strong guarantee with copy-and-swap
+class Vector {
+    int* data_;
+    size_t size_;
+    
+public:
+    Vector& operator=(const Vector& other) {
+        Vector temp(other);  // Copy (may throw)
+        swap(temp);          // Swap (noexcept)
+        return *this;        // Either complete success or no change
+    }
+    
+    void swap(Vector& other) noexcept {
+        std::swap(data_, other.data_);
+        std::swap(size_, other.size_);
+    }
+};
+
+// Function that provides strong guarantee
+void updateData(Data& data) {
+    Data backup = data;       // Save state
+    
+    try {
+        data.modify();        // May throw
+        data.validate();      // May throw
+    } catch (...) {
+        data = backup;        // Restore on error
+        throw;                // Re-throw
+    }
+}
+```
+
+**Summary:**
+
+- **Use exceptions** for truly exceptional conditions
+- **Use `std::expected`** for expected/recoverable errors (C++23)
+- **Use enums** for type-safe error codes
+- **Always use RAII** for resource management
+- **Mark noexcept** what won't throw
+- **Catch by const reference** to avoid slicing
+- **Provide strong or basic guarantees** wherever possible
+
+---
+
+## 11. Quick Reference
 
 | Feature | Use When |
 |---------|----------|
