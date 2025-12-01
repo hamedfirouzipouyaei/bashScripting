@@ -1,6 +1,6 @@
 # 🇨➕➕ Programming Guide
 
-## 📋 Table of Contents
+<!-- ## 📋 Table of Contents
 
 - [🇨➕➕ Programming Guide](#-programming-guide)
   - [📋 Table of Contents](#-table-of-contents)
@@ -155,7 +155,7 @@
       - [DO ✅](#do-)
       - [DON'T ❌](#dont-)
       - [Exception Safety Guidelines](#exception-safety-guidelines)
-  - [11. Quick Reference](#11-quick-reference)
+  - [11. Quick Reference](#11-quick-reference) -->
 
 ---
 

@@ -2,7 +2,7 @@
 
 A comprehensive guide to understanding and implementing multithreading in C++ using `std::thread` from C++11.
 
-## Table of Contents
+<!-- ## Table of Contents
 
 - [C++ Threading Tutorial](#c-threading-tutorial)
   - [Table of Contents](#table-of-contents)
@@ -437,7 +437,7 @@ A comprehensive guide to understanding and implementing multithreading in C++ us
       - [Thread Pool Comparison](#thread-pool-comparison)
       - [Thread Pool Best Practices](#thread-pool-best-practices)
       - [Thread Pool Key Takeaways](#thread-pool-key-takeaways)
-    - [Key Takeaways (Data Structures for Concurrent Programming)](#key-takeaways-data-structures-for-concurrent-programming)
+    - [Key Takeaways (Data Structures for Concurrent Programming)](#key-takeaways-data-structures-for-concurrent-programming) -->
 
 ## Thread Basics
 
