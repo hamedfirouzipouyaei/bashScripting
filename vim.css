@@ -1,0 +1,677 @@
+/* ===========================
+   CSS Variables & Root Styles
+   =========================== */
+:root {
+    --primary-color: #019833;
+    --secondary-color: #66d9ef;
+    --accent-color: #f92672;
+    --bg-color: #1e1e1e;
+    --surface-color: #272822;
+    --surface-hover: #3e3d32;
+    --text-primary: #f8f8f2;
+    --text-secondary: #75715e;
+    --border-color: #49483e;
+    --code-bg: #272822;
+    --success-color: #a6e22e;
+    --warning-color: #fd971f;
+    --danger-color: #f92672;
+    --sidebar-width: 280px;
+}
+
+/* ===========================
+   Global Reset & Base Styles
+   =========================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-color);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ===========================
+   Sidebar Navigation
+   =========================== */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 1000;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: var(--surface-color);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+.sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h2 {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-section {
+    margin: 20px 0;
+}
+
+.nav-section ul {
+    list-style: none;
+}
+
+.nav-section ul li {
+    margin: 2px 0;
+}
+
+.nav-section ul li a {
+    display: block;
+    padding: 10px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.nav-section ul li a:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-primary);
+    border-left-color: var(--primary-color);
+}
+
+.nav-section ul li a.active {
+    background-color: var(--surface-hover);
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* ===========================
+   Main Content Area
+   =========================== */
+.content {
+    margin-left: var(--sidebar-width);
+    flex: 1;
+    padding: 40px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* ===========================
+   Header & Typography
+   =========================== */
+.page-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-header h1 {
+    font-size: 3rem;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin: 40px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 30px 0 15px;
+    font-weight: 600;
+}
+
+h4 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin: 20px 0 10px;
+    font-weight: 600;
+}
+
+p {
+    margin: 15px 0;
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+/* ===========================
+   Links
+   =========================== */
+a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+/* ===========================
+   Code Blocks & Inline Code
+   =========================== */
+code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    background-color: var(--surface-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--success-color);
+}
+
+pre {
+    background-color: var(--code-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ===========================
+   Keyboard Keys
+   =========================== */
+kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85em;
+    color: var(--text-primary);
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+}
+
+/* ===========================
+   Special Content Boxes
+   =========================== */
+.intro-section {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+    margin: 30px 0;
+}
+
+.config-note {
+    background-color: rgba(25, 152, 51, 0.1);
+    border-left: 4px solid var(--primary-color);
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.tip-box {
+    background-color: rgba(166, 226, 46, 0.1);
+    border-left: 4px solid var(--success-color);
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+/* ===========================
+   Mode Cards
+   =========================== */
+.modes-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.mode-card {
+    padding: 25px;
+    border-radius: 8px;
+    border: 2px solid;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mode-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mode-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.3rem;
+}
+
+.mode-card p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.command-mode {
+    background-color: rgba(25, 152, 51, 0.1);
+    border-color: var(--primary-color);
+}
+
+.command-mode h3 {
+    color: var(--primary-color);
+}
+
+.insert-mode {
+    background-color: rgba(102, 217, 239, 0.1);
+    border-color: var(--secondary-color);
+}
+
+.insert-mode h3 {
+    color: var(--secondary-color);
+}
+
+.lastline-mode {
+    background-color: rgba(253, 151, 31, 0.1);
+    border-color: var(--warning-color);
+}
+
+.lastline-mode h3 {
+    color: var(--warning-color);
+}
+
+/* ===========================
+   Tables
+   =========================== */
+.command-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: var(--surface-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.command-table thead {
+    background-color: var(--primary-color);
+}
+
+.command-table thead th {
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.command-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.command-table tbody tr:hover {
+    background-color: var(--surface-hover);
+}
+
+.command-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.command-table tbody td {
+    padding: 12px 15px;
+    color: var(--text-secondary);
+}
+
+.command-table tbody td:first-child {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.command-table tbody td:nth-child(2) {
+    color: var(--success-color);
+}
+
+/* ===========================
+   Command Grid
+   =========================== */
+.command-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.command-card {
+    background-color: var(--surface-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.command-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.command-card kbd,
+.command-card code {
+    font-size: 1.2rem;
+    display: block;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.command-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ===========================
+   Tips Grid
+   =========================== */
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin: 30px 0;
+}
+
+.tip-card {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+    transition: all 0.2s ease;
+    position: relative;
+    padding-left: 80px;
+}
+
+.tip-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tip-number {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+}
+
+.tip-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.tip-card p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* ===========================
+   Mermaid Diagrams
+   =========================== */
+.mermaid {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 25px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: auto;
+}
+
+.diagram-caption {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.95rem;
+    margin: -15px 0 25px 0;
+    padding: 15px;
+    background-color: rgba(25, 152, 51, 0.05);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 0 4px 4px 0;
+}
+
+.diagram-caption code {
+    background-color: rgba(25, 152, 51, 0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.diagram-caption strong {
+    color: var(--text-primary);
+}
+
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ===========================
+   Sections
+   =========================== */
+section {
+    margin: 40px 0;
+    scroll-margin-top: 20px;
+}
+
+section:target {
+    animation: highlight 2s ease;
+}
+
+@keyframes highlight {
+    0% {
+        background-color: rgba(25, 152, 51, 0.1);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* ===========================
+   Footer
+   =========================== */
+footer {
+    margin-left: var(--sidebar-width);
+    padding: 30px 40px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ===========================
+   Responsive Design
+   =========================== */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 250px;
+    }
+    
+    .content {
+        padding: 30px;
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .content {
+        margin-left: 0;
+        padding: 20px;
+    }
+    
+    footer {
+        margin-left: 0;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .modes-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .command-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .tips-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.2rem;
+    }
+    
+    .content {
+        padding: 15px;
+    }
+    
+    .command-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    pre {
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* ===========================
+   Print Styles
+   =========================== */
+@media print {
+    .sidebar {
+        display: none;
+    }
+    
+    .content {
+        margin-left: 0;
+        max-width: 100%;
+    }
+    
+    .page-header {
+        page-break-after: avoid;
+    }
+    
+    section {
+        page-break-inside: avoid;
+    }
+    
+    pre {
+        page-break-inside: avoid;
+    }
+}
+
+/* ===========================
+   Utilities
+   =========================== */
+.text-center {
+    text-align: center;
+}
+
+.mt-1 { margin-top: 10px; }
+.mt-2 { margin-top: 20px; }
+.mt-3 { margin-top: 30px; }
+
+.mb-1 { margin-bottom: 10px; }
+.mb-2 { margin-bottom: 20px; }
+.mb-3 { margin-bottom: 30px; }
+
+.p-1 { padding: 10px; }
+.p-2 { padding: 20px; }
+.p-3 { padding: 30px; }

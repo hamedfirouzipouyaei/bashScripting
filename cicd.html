@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD and GitHub Actions - Complete Guide</title>
+    <link rel="stylesheet" href="cicd.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            hljs.highlightAll();
+            mermaid.initialize({ 
+                startOnLoad: true,
+                theme: 'dark',
+                themeVariables: {
+                    primaryColor: '#2088ff',
+                    primaryTextColor: '#fff',
+                    primaryBorderColor: '#2088ff',
+                    lineColor: '#58a6ff',
+                    secondaryColor: '#238636',
+                    tertiaryColor: '#1f2937',
+                    background: '#0d1117',
+                    mainBkg: '#161b22',
+                    secondBkg: '#21262d',
+                    textColor: '#c9d1d9',
+                    border1: '#30363d',
+                    border2: '#21262d'
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Fixed Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="nav-header">
+                <h2>🚧 CI/CD Guide</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#core-concepts">Core Concepts</a></li>
+                <li><a href="#runners">Runners</a></li>
+                <li><a href="#events">GitHub Events</a></li>
+                <li><a href="#artifacts">Artifacts & Caching</a></li>
+                <li><a href="#env-variables">Environment Variables</a></li>
+                <li><a href="#execution-control">Execution Control</a></li>
+                <li><a href="#docker">Jobs & Docker</a></li>
+                <li><a href="#custom-actions">Custom Actions</a></li>
+                <li><a href="#security">Security</a></li>
+                <li><a href="#patterns">Common Patterns</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <!-- Introduction Section -->
+            <section id="introduction">
+                <h1>🚧 CI/CD and GitHub Actions</h1>
+                
+                <h2>Introduction to GitHub Actions</h2>
+                <p>GitHub Actions is a powerful CI/CD platform that allows you to automate your software development workflows directly in your GitHub repository. It enables you to build, test, and deploy your code right from GitHub.</p>
+                
+                <div class="important-note">
+                    <h3>Key Benefits</h3>
+                    <ul>
+                        <li>Automate repetitive tasks</li>
+                        <li>Ensure code quality through automated testing</li>
+                        <li>Deploy applications automatically</li>
+                        <li>Integrate with thousands of third-party services</li>
+                        <li>Respond to GitHub events (push, pull requests, issues, etc.)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Core Concepts Section -->
+            <section id="core-concepts">
+                <h2>Core Concepts</h2>
+                
+                <h3>1. Workflow</h3>
+                <p>A <strong>workflow</strong> is an automated process that you define in your repository. Workflows are made up of one or more jobs and can be triggered by events, scheduled, or manually.</p>
+                
+                <div class="workflow-diagram">
+                    <h4>Workflow Lifecycle Diagram</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[GitHub Event Trigger] -->|push, pull_request, etc.| B[Workflow Started]
+    B --> C{Jobs}
+    
+    C --> D[Job 1: Build]
+    C --> E[Job 2: Test]
+    C --> F[Job 3: Deploy]
+    
+    D --> D1[Step 1: Checkout Code]
+    D1 --> D2[Step 2: Setup Environment]
+    D2 --> D3[Step 3: Install Dependencies]
+    D3 --> D4[Step 4: Build Application]
+    
+    E --> E1[Step 1: Checkout Code]
+    E1 --> E2[Step 2: Run Tests]
+    E2 --> E3[Step 3: Upload Coverage]
+    
+    D4 -->|needs: build| F
+    E3 -->|needs: test| F
+    
+    F --> F1[Step 1: Deploy to Server]
+    F1 --> F2[Step 2: Run Health Check]
+    
+    F2 --> G[Workflow Complete]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:2px
+    style B fill:#fff5b1,stroke:#ffd700,stroke-width:2px
+    style G fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style D fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+    style F fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="code-example">
+                    <h4>Example workflow triggers:</h4>
+                    <pre><code class="language-yaml">on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:  # Manual trigger</code></pre>
+                </div>
+
+                <h3>2. Jobs</h3>
+                <p>A <strong>job</strong> is a set of steps that execute on the same runner. By default, jobs run in parallel, but you can configure them to run sequentially with dependencies.</p>
+
+                <div class="workflow-diagram">
+                    <h4>Jobs Execution Pattern</h4>
+                    <div class="mermaid">
+flowchart LR
+    subgraph "Parallel Execution (Default)"
+        A1[Trigger] --> B1[Job: Build]
+        A1 --> C1[Job: Test]
+        A1 --> D1[Job: Lint]
+        B1 -.runs simultaneously.-> C1
+        C1 -.runs simultaneously.-> D1
+    end
+    
+    subgraph "Sequential with Dependencies"
+        A2[Trigger] --> B2[Job: Build]
+        B2 -->|needs: build| C2[Job: Test]
+        C2 -->|needs: test| D2[Job: Deploy]
+    end
+    
+    style A1 fill:#e1f5ff,stroke:#0366d6
+    style A2 fill:#e1f5ff,stroke:#0366d6
+                    </div>
+                </div>
+
+                <div class="code-example">
+                    <h4>Example with job dependencies:</h4>
+                    <pre><code class="language-yaml">jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # steps here
+  
+  test:
+    needs: build  # This job waits for build to complete
+    runs-on: ubuntu-latest
+    steps:
+      # test steps here
+  
+  deploy:
+    needs: [build, test]  # Waits for both jobs
+    runs-on: ubuntu-latest
+    steps:
+      # deployment steps here</code></pre>
+                </div>
+
+                <h3>3. Steps</h3>
+                <p><strong>Steps</strong> are individual tasks that run commands or actions within a job. Steps execute in order and are sequential within a job.</p>
+
+                <div class="workflow-diagram">
+                    <h4>Step Execution Flow</h4>
+                    <div class="mermaid">
+flowchart TB
+    A[Job Starts] --> B[Step 1: Checkout Code]
+    B --> C[Step 2: Setup Environment]
+    C --> D[Step 3: Install Dependencies]
+    D --> E[Step 4: Run Linter]
+    E --> F[Step 5: Run Tests]
+    F --> G[Step 6: Build Application]
+    G --> H[Step 7: Upload Artifacts]
+    H --> I[Job Complete]
+    
+    B -.if fails.-> X[Job Failed]
+    C -.if fails.-> X
+    D -.if fails.-> X
+    E -.if fails.-> X
+    F -.if fails.-> X
+    G -.if fails.-> X
+    H -.if fails.-> X
+    
+    style A fill:#fff5b1,stroke:#ffd700,stroke-width:2px
+    style I fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style X fill:#f8d7da,stroke:#dc3545,stroke-width:2px
+    style B fill:#e7f3ff,stroke:#0366d6
+    style C fill:#e7f3ff,stroke:#0366d6
+    style D fill:#e7f3ff,stroke:#0366d6
+    style E fill:#e7f3ff,stroke:#0366d6
+    style F fill:#e7f3ff,stroke:#0366d6
+    style G fill:#e7f3ff,stroke:#0366d6
+    style H fill:#e7f3ff,stroke:#0366d6
+                    </div>
+                </div>
+
+                <div class="code-example">
+                    <h4>Example steps:</h4>
+                    <pre><code class="language-yaml">steps:
+  - name: Checkout code
+    uses: actions/checkout@v3
+  
+  - name: Set up Node.js
+    uses: actions/setup-node@v3
+    with:
+      node-version: '18'
+  
+  - name: Install dependencies
+    run: npm install
+  
+  - name: Run tests
+    run: npm test</code></pre>
+                </div>
+            </section>
+
+            <!-- Runners Section -->
+            <section id="runners">
+                <h2>Runners</h2>
+                <p>A <strong>runner</strong> is a server that executes your workflows. Runners listen for available jobs, run one job at a time, and report progress, logs, and results back to GitHub.</p>
+
+                <h3>GitHub-Hosted Runners</h3>
+                <div class="workflow-diagram">
+                    <h4>GitHub-Hosted Runner Infrastructure</h4>
+                    <div class="mermaid">
+flowchart TB
+    subgraph "GitHub Cloud"
+        A[Your Workflow Trigger] --> B[GitHub Actions Service]
+        B --> C{Runner Queue}
+        
+        C --> D1[Ubuntu Runner Pool]
+        C --> E1[Windows Runner Pool]
+        C --> F1[macOS Runner Pool]
+        
+        D1 --> D2[Runner 1]
+        D1 --> D3[Runner 2]
+        D1 --> D4[Runner N...]
+        
+        E1 --> E2[Runner 1]
+        E1 --> E3[Runner 2]
+        
+        F1 --> F2[Runner 1]
+        F1 --> F3[Runner 2]
+    end
+    
+    D2 --> G[Execute Job]
+    E2 --> G
+    F2 --> G
+    
+    G --> H[Return Results]
+    H --> B
+    B --> I[Display in GitHub UI]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:2px
+    style B fill:#fff5b1,stroke:#ffd700,stroke-width:2px
+    style D1 fill:#f0e6ff,stroke:#6f42c1
+    style E1 fill:#e6f7ff,stroke:#1890ff
+    style F1 fill:#f5f5f5,stroke:#8c8c8c
+    style G fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style I fill:#d4edda,stroke:#28a745,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="runner-comparison">
+                    <h3>Runner Comparison</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>GitHub-Hosted</th>
+                                <th>Self-Hosted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Setup</strong></td>
+                                <td>✅ No setup required</td>
+                                <td>⚠️ Manual setup</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cost</strong></td>
+                                <td>Free tier: 2,000 min/month</td>
+                                <td>No minute limits</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Environment</strong></td>
+                                <td>Pre-configured</td>
+                                <td>Fully customizable</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Network Access</strong></td>
+                                <td>Public internet only</td>
+                                <td>✅ Private networks</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cache</strong></td>
+                                <td>No persistent cache</td>
+                                <td>✅ Persistent cache</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- GitHub Events Section -->
+            <section id="events">
+                <h2>GitHub Events Deep Dive</h2>
+                <p>GitHub Actions workflows are triggered by <strong>events</strong> that occur in your repository. Understanding event activity types and filters is crucial for creating efficient, targeted workflows.</p>
+
+                <h3>Common Events and Activity Types</h3>
+                
+                <div class="event-box">
+                    <h4>1. pull_request Event</h4>
+                    <div class="code-example">
+                        <pre><code class="language-yaml">on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]</code></pre>
+                    </div>
+                    <p><strong>Available activity types:</strong></p>
+                    <ul>
+                        <li><code>opened</code> - PR is created</li>
+                        <li><code>synchronize</code> - New commits pushed to the PR branch</li>
+                        <li><code>reopened</code> - Previously closed PR is reopened</li>
+                        <li><code>closed</code> - PR is closed (merged or not)</li>
+                        <li><code>ready_for_review</code> - Draft PR marked as ready</li>
+                    </ul>
+                </div>
+
+                <div class="event-box">
+                    <h4>2. Event Filters</h4>
+                    <div class="code-example">
+                        <h5>Branch and Tag Filters</h5>
+                        <pre><code class="language-yaml">on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'releases/**'  # Pattern matching
+    paths:
+      - 'src/**'
+      - 'package.json'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'</code></pre>
+                    </div>
+                </div>
+
+                <div class="tip-box">
+                    <h4>💡 Filter Best Practices</h4>
+                    <ul>
+                        <li>Use specific paths to avoid unnecessary runs</li>
+                        <li>Select only needed activity types</li>
+                        <li>Combine filters for precision</li>
+                        <li>Use <code>paths-ignore</code> for documentation changes</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Artifacts and Caching Section -->
+            <section id="artifacts">
+                <h2>Artifacts, Job Outputs & Caching</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Data Sharing Overview</h4>
+                    <div class="mermaid">
+flowchart TB
+    subgraph "Job 1: Build"
+        A[Build Process] --> B[Generate Files]
+        B --> C[Create Outputs]
+        C --> D[Upload Artifacts]
+    end
+    
+    subgraph "Data Types"
+        E[Job Outputs]
+        F[Artifacts]
+        G[Cache]
+    end
+    
+    subgraph "Job 2: Test"
+        H[Download Artifacts] --> I[Use Files]
+        J[Read Job Outputs] --> K[Use Variables]
+    end
+    
+    D --> F
+    C --> E
+    F --> H
+    E --> J
+    
+    style A fill:#e1f5ff,stroke:#0366d6
+    style E fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style F fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style G fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="comparison-table">
+                    <h3>Artifacts vs Job Outputs vs Cache</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Artifacts</th>
+                                <th>Job Outputs</th>
+                                <th>Cache</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Purpose</strong></td>
+                                <td>Share files between jobs</td>
+                                <td>Share variables/strings</td>
+                                <td>Speed up builds</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data Type</strong></td>
+                                <td>Files, directories</td>
+                                <td>Strings, variables</td>
+                                <td>Dependencies, build cache</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Size Limit</strong></td>
+                                <td>10 GB per workflow</td>
+                                <td>1 MB total</td>
+                                <td>10 GB per repository</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Use Case</strong></td>
+                                <td>Build outputs, test results</td>
+                                <td>Version numbers, status</td>
+                                <td>node_modules, pip cache</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Caching Performance Impact</h3>
+                <div class="workflow-diagram">
+                    <div class="mermaid">
+flowchart TD
+    A[Workflow Starts] --> B{Check Cache}
+    
+    subgraph "Cache Miss Path"
+        B -->|No Cache| C[Install Dependencies<br/>⏱️ 3-5 minutes]
+        C --> D[Run Build]
+        D --> E[Save to Cache]
+        E --> F[Complete<br/>⏱️ Total: 5-6 min]
+    end
+    
+    subgraph "Cache Hit Path"
+        B -->|Cache Found| G[Restore Dependencies<br/>⚡ 15-30 seconds]
+        G --> H[Run Build]
+        H --> I[Complete<br/>⚡ Total: 2-3 min]
+    end
+    
+    style C fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style G fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="code-example">
+                    <h4>Node.js Dependency Caching</h4>
+                    <pre><code class="language-yaml">- name: Cache node_modules
+  uses: actions/cache@v4
+  with:
+    path: |
+      node_modules
+      ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-</code></pre>
+                </div>
+            </section>
+
+            <!-- Environment Variables Section -->
+            <section id="env-variables">
+                <h2>Environment Variables and Secrets</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Environment Variables & Secrets Overview</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[Workflow Configuration] --> B[Environment Variables]
+    A --> C[Secrets]
+    A --> D[Job Environments]
+    
+    B --> B1[Workflow Level<br/>All jobs]
+    B --> B2[Job Level<br/>Job steps]
+    B --> B3[Step Level<br/>Single step]
+    
+    C --> C1[Repository Secrets<br/>All branches]
+    C --> C2[Environment Secrets<br/>Specific environment]
+    C --> C3[Organization Secrets<br/>Multiple repos]
+    
+    D --> D1[Environment Protection<br/>Manual approval]
+    D --> D2[Environment Variables<br/>Per environment]
+    
+    B1 --> E[Access: env.VAR_NAME]
+    C1 --> F[Access: secrets.SECRET_NAME]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style C fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style D fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="important-note">
+                    <h3>Secret Security Best Practices</h3>
+                    <ul>
+                        <li>✅ Use secrets for all sensitive data</li>
+                        <li>✅ Rotate secrets regularly</li>
+                        <li>✅ Use environment-specific secrets</li>
+                        <li>✅ Set minimal required permissions</li>
+                        <li>❌ Never print or echo secret values</li>
+                        <li>❌ Don't hardcode credentials in workflows</li>
+                    </ul>
+                </div>
+
+                <div class="code-example">
+                    <h4>Variable Scope Hierarchy</h4>
+                    <pre><code class="language-yaml"># WORKFLOW-LEVEL: Available everywhere
+env:
+  NODE_VERSION: '18'
+  APP_NAME: 'my-application'
+
+jobs:
+  build:
+    # JOB-LEVEL: Available to all steps in this job
+    env:
+      BUILD_ENV: 'production'
+    
+    steps:
+      # STEP-LEVEL: Only for this step
+      - name: Build
+        env:
+          BUILD_TARGET: 'linux-x64'
+        run: npm run build</code></pre>
+                </div>
+            </section>
+
+            <!-- Execution Control Section -->
+            <section id="execution-control">
+                <h2>Controlling Workflow and Job Execution</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Workflow Control Overview</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[Workflow Controls] --> B[Concurrency]
+    A --> C[Conditions]
+    A --> D[Manual Controls]
+    A --> E[Timeouts]
+    
+    B --> B1[Cancel in-progress runs]
+    B --> B2[Queue workflows]
+    
+    C --> C1[if conditionals]
+    C --> C2[Status functions]
+    
+    D --> D1[workflow_dispatch]
+    D --> D2[Approval gates]
+    
+    E --> E1[Job timeouts]
+    E --> E2[Step timeouts]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+                    </div>
+                </div>
+
+                <h3>Concurrency Control</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml"># Cancel previous runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true</code></pre>
+                </div>
+
+                <h3>Conditional Execution</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml">steps:
+  # Only run if tests succeed
+  - name: Deploy
+    if: success()
+    run: echo "Tests passed, deploying..."
+  
+  # Only run if tests fail
+  - name: Notify failure
+    if: failure()
+    run: echo "Tests failed!"
+  
+  # Always run (even if previous steps fail)
+  - name: Cleanup
+    if: always()
+    run: rm -rf temp/</code></pre>
+                </div>
+
+                <div class="golden-rule">
+                    <h3>⭐ Status Functions</h3>
+                    <ul>
+                        <li><code>success()</code> - All previous steps succeeded</li>
+                        <li><code>failure()</code> - Any previous step failed</li>
+                        <li><code>always()</code> - Always runs (regardless of status)</li>
+                        <li><code>cancelled()</code> - Workflow was cancelled</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Docker Section -->
+            <section id="docker">
+                <h2>Jobs and Docker Containers</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Container Jobs Overview</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[GitHub Actions Runner] --> B{Job Type}
+    
+    B -->|Standard Job| C[VM with OS]
+    C --> C1[Install Dependencies]
+    C1 --> C2[Run Steps]
+    
+    B -->|Container Job| D[VM with Docker]
+    D --> D1[Pull Container Image]
+    D1 --> D2[Start Container]
+    D2 --> D3[Run Steps Inside Container]
+    
+    B -->|Service Containers| E[VM with Docker]
+    E --> E1[Start Service Containers]
+    E --> E2[Start Job Container]
+    E2 --> E3[Connect Services]
+    E3 --> E4[Run Steps]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style C fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style D fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+                    </div>
+                </div>
+
+                <h3>Running Jobs in Containers</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml">jobs:
+  test-in-container:
+    runs-on: ubuntu-latest
+    
+    # Run this job inside a container
+    container:
+      image: node:18-alpine
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Node version
+        run: node --version
+      - name: Run tests
+        run: npm test</code></pre>
+                </div>
+
+                <h3>Service Containers</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml">jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: npm run test:integration</code></pre>
+                </div>
+            </section>
+
+            <!-- Custom Actions Section -->
+            <section id="custom-actions">
+                <h2>Building and Using Custom Actions</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Action Types Overview</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[GitHub Actions Types] --> B[JavaScript Actions]
+    A --> C[Docker Actions]
+    A --> D[Composite Actions]
+    
+    B --> B1[Run in Node.js runtime]
+    B --> B2[Fast execution]
+    B --> B3[All platforms]
+    
+    C --> C1[Run in container]
+    C --> C2[Full environment control]
+    C --> C3[Any language]
+    
+    D --> D1[Combine multiple steps]
+    D --> D2[No code required]
+    D --> D3[YAML only]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="comparison-table">
+                    <h3>Action Types Comparison</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>JavaScript</th>
+                                <th>Docker</th>
+                                <th>Composite</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Language</strong></td>
+                                <td>JavaScript/TypeScript</td>
+                                <td>Any</td>
+                                <td>YAML (shell commands)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Speed</strong></td>
+                                <td>⚡ Fast</td>
+                                <td>🐢 Slower</td>
+                                <td>⚡ Fast</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Platforms</strong></td>
+                                <td>Linux, macOS, Windows</td>
+                                <td>Linux only</td>
+                                <td>All supported</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Use Case</strong></td>
+                                <td>API calls, logic</td>
+                                <td>Custom environment</td>
+                                <td>Combine actions</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Composite Action Example</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml">name: 'Setup Node.js Application'
+description: 'Checkout code, setup Node.js, and install dependencies'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: true
+    default: '18'
+
+outputs:
+  cache-hit:
+    description: 'Whether the cache was hit'
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+      id: cache
+    - shell: bash
+      run: npm ci</code></pre>
+                </div>
+            </section>
+
+            <!-- Security Section -->
+            <section id="security">
+                <h2>Security and Permissions</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Security Layers Overview</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[GitHub Actions Security] --> B[Token Permissions]
+    A --> C[Secret Management]
+    A --> D[Code Security]
+    A --> E[Runner Security]
+    
+    B --> B1[GITHUB_TOKEN scope]
+    B --> B2[Least privilege]
+    
+    C --> C1[Encrypted secrets]
+    C --> C2[Environment protection]
+    
+    D --> D1[Dependency scanning]
+    D --> D2[Code scanning]
+    D --> D3[Pin action versions]
+    
+    E --> E1[Self-hosted hardening]
+    E --> E2[Network isolation]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style C fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style D fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="warning-note">
+                    <h3>⚠️ GITHUB_TOKEN Permissions</h3>
+                    <p>Always set minimal required permissions for the GITHUB_TOKEN:</p>
+                    <div class="code-example">
+                        <pre><code class="language-yaml">permissions:
+  contents: read
+  pull-requests: write
+  issues: write</code></pre>
+                    </div>
+                </div>
+
+                <div class="danger-note">
+                    <h3>🔒 Pin Action Versions</h3>
+                    <div class="code-example">
+                        <pre><code class="language-yaml"># ❌ DON'T: Use branches
+- uses: actions/checkout@main
+
+# ✅ DO: Pin to specific SHA
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1</code></pre>
+                    </div>
+                </div>
+
+                <div class="important-note">
+                    <h3>Security Best Practices Summary</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Best Practice</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Tokens</strong></td>
+                                <td>Minimal permissions</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Secrets</strong></td>
+                                <td>Environment-specific</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Actions</strong></td>
+                                <td>Pin versions with SHA</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dependencies</strong></td>
+                                <td>Scan regularly</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Runners</strong></td>
+                                <td>Isolate environment</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Code</strong></td>
+                                <td>Security scanning</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Common Patterns Section -->
+            <section id="patterns">
+                <h2>Common Workflow Patterns</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Common CI/CD Patterns</h4>
+                    <div class="mermaid">
+flowchart TB
+    subgraph pat1 ["Pattern 1: Mono-repo"]
+        direction TB
+        M1[Trigger] --> M2{Path Filter}
+        M2 -->|frontend/** changed| M3[Build Frontend]
+        M2 -->|backend/** changed| M4[Build Backend]
+        M3 --> M6[Deploy Frontend]
+        M4 --> M7[Deploy Backend]
+    end
+    
+    subgraph pat2 ["Pattern 2: Multi-Environment"]
+        direction TB
+        E1[Main Branch] --> E2[Build & Test]
+        E2 --> E3[Deploy Dev]
+        E3 --> E5[Deploy Staging]
+        E5 --> E6{Manual Approval}
+        E6 -->|Approved| E7[Deploy Production]
+    end
+    
+    style M1 fill:#e1f5ff,stroke:#0366d6
+    style E1 fill:#e1f5ff,stroke:#0366d6
+    style E7 fill:#d4edda,stroke:#28a745,stroke-width:2px
+                    </div>
+                </div>
+
+                <h3>Pattern 1: Mono-repo CI/CD</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml">jobs:
+  detect-changes:
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'packages/frontend/**'
+            backend:
+              - 'packages/backend/**'
+  
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - run: npm run build --workspace=frontend</code></pre>
+                </div>
+
+                <h3>Pattern 2: Multi-Environment Pipeline</h3>
+                <div class="code-example">
+                    <pre><code class="language-yaml">jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm ci && npm test && npm run build
+  
+  deploy-dev:
+    needs: build
+    environment: development
+    steps:
+      - run: echo "Deploy to dev"
+  
+  deploy-staging:
+    needs: deploy-dev
+    environment: staging
+    steps:
+      - run: echo "Deploy to staging"
+  
+  deploy-production:
+    needs: deploy-staging
+    environment: production  # Requires manual approval
+    steps:
+      - run: echo "Deploy to production"</code></pre>
+                </div>
+            </section>
+
+            <!-- Best Practices Section -->
+            <section id="best-practices">
+                <h2>Best Practices</h2>
+
+                <div class="workflow-diagram">
+                    <h4>Best Practices Overview</h4>
+                    <div class="mermaid">
+flowchart TD
+    A[GitHub Actions Best Practices] --> B[Security]
+    A --> C[Performance]
+    A --> D[Maintainability]
+    A --> E[Cost Optimization]
+    
+    B --> B1[✓ Use specific versions]
+    B --> B2[✓ Secure secrets]
+    B --> B3[✓ Limit permissions]
+    
+    C --> C1[✓ Cache dependencies]
+    C --> C2[✓ Parallelize jobs]
+    C --> C3[✓ Use matrix strategy]
+    
+    D --> D1[✓ Reusable workflows]
+    D --> D2[✓ Document workflows]
+    D --> D3[✓ Keep workflows DRY]
+    
+    E --> E1[✓ Path filters]
+    E --> E2[✓ Cancel redundant runs]
+    E --> E3[✓ Set timeouts]
+    
+    style A fill:#e1f5ff,stroke:#0366d6,stroke-width:3px
+    style B fill:#ffe6e6,stroke:#dc3545,stroke-width:2px
+    style C fill:#e6ffe6,stroke:#28a745,stroke-width:2px
+    style D fill:#fff5e6,stroke:#fd7e14,stroke-width:2px
+    style E fill:#f0e6ff,stroke:#6f42c1,stroke-width:2px
+                    </div>
+                </div>
+
+                <div class="tip-grid">
+                    <div class="tip-box">
+                        <h3>🔒 Security</h3>
+                        <ul>
+                            <li>Use specific action versions</li>
+                            <li>Secure secrets properly</li>
+                            <li>Limit GITHUB_TOKEN permissions</li>
+                            <li>Pin dependencies with SHA</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tip-box">
+                        <h3>⚡ Performance</h3>
+                        <ul>
+                            <li>Cache dependencies</li>
+                            <li>Parallelize independent jobs</li>
+                            <li>Use matrix strategy</li>
+                            <li>Optimize Docker layers</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tip-box">
+                        <h3>🛠️ Maintainability</h3>
+                        <ul>
+                            <li>Use reusable workflows</li>
+                            <li>Document workflows clearly</li>
+                            <li>Keep workflows DRY</li>
+                            <li>Create composite actions</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tip-box">
+                        <h3>💰 Cost Optimization</h3>
+                        <ul>
+                            <li>Use path filters to skip builds</li>
+                            <li>Cancel redundant workflow runs</li>
+                            <li>Set reasonable timeouts</li>
+                            <li>Use self-hosted for high volume</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="golden-rule">
+                    <h3>⭐ The Golden Rules</h3>
+                    <ol>
+                        <li><strong>Security First:</strong> Always use secrets for credentials and limit permissions</li>
+                        <li><strong>Optimize for Speed:</strong> Cache dependencies and parallelize jobs</li>
+                        <li><strong>Keep It Simple:</strong> Use reusable workflows and composite actions</li>
+                        <li><strong>Monitor Costs:</strong> Use path filters and cancel redundant runs</li>
+                        <li><strong>Document Everything:</strong> Clear names and comments for maintainability</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer>
+                <p>GitHub Actions Documentation - Complete CI/CD Guide</p>
+                <p>For more information, visit <a href="https://docs.github.com/en/actions" target="_blank">GitHub Actions Documentation</a></p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Active navigation highlighting
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-links a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

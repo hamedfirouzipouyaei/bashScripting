@@ -2378,6 +2378,82 @@ Array arr = createArray();  // Move constructor called (efficient!)
 
 **Why important?** Avoid expensive copies of temporary objects. Move is O(1), copy can be O(n).
 
+> **💡 Important:** The `this` Pointer. `this` is a reserved keyworkd that contains the address of the current object. Hence, it's a pointer to the object. It can be only used in **class** scope. All the members' access is done via the `this` pointer. It can be used by the programmer
+>
+> - To access data member and methods
+> - To determine if two objects are the same
+> - Can be dereferenced (`*this`) to yeild the current object
+
+### Delegating Constructors (C++11)
+
+> **💡 Important:** Constructor delegation is a powerful C++11 feature that eliminates code duplication and ensures consistent initialization across multiple constructors. This is a best practice you should always follow when you have overloaded constructors.
+
+**Why?** Avoid code duplication and ensure consistent initialization across multiple constructors.
+
+**The Problem:** Without delegation, initialization logic is repeated:
+
+```cpp
+class Player {
+private:
+    std::string name;
+    int health;
+    int xp;
+
+public:
+    // Repeated initialization logic in each constructor
+    Player() : name{"None"}, health{0}, xp{0} {}
+    
+    Player(std::string name_val) 
+        : name{name_val}, health{0}, xp{0} {}
+    
+    Player(std::string name_val, int health_val, int xp_val)
+        : name{name_val}, health{health_val}, xp{xp_val} {}
+};
+```
+
+**The Solution:** Delegate to a primary constructor to centralize initialization:
+
+```cpp
+class Player {
+private:
+    std::string name;
+    int health;
+    int xp;
+
+public:
+    // Primary constructor - all initialization logic here
+    Player(std::string name_val, int health_val, int xp_val)
+        : name{name_val}, health{health_val}, xp{xp_val} {
+        // Any validation or additional setup goes here
+    }
+    
+    // Delegating constructors - call the primary constructor
+    Player() : Player{"None", 0, 0} {}
+    
+    Player(std::string name_val) : Player{name_val, 100, 0} {}
+};
+```
+
+**Benefits:**
+
+- ✅ **No duplication** - Initialization logic in one place
+- ✅ **Consistency** - All constructors use the same initialization path
+- ✅ **Maintainability** - Changes to initialization only need to be made once
+- ✅ **Validation** - Any validation in the primary constructor applies to all
+
+**Important Note:** When using constructor delegation:
+
+- The delegating constructor **cannot** have a member initializer list
+- You delegate **OR** initialize members, not both
+
+```cpp
+// ❌ WRONG - Cannot mix delegation with initialization
+Player() : name{"None"}, Player{"None", 0, 0} {}  // ERROR!
+
+// ✅ CORRECT - Delegation only
+Player() : Player{"None", 0, 0} {}
+```
+
 ### The Rule of Three/Five/Zero - ESSENTIAL
 
 **Rule of Three (C++98):** If you define any of these, define all:

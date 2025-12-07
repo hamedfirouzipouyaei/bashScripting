@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git & GitHub Reference Guide</title>
+    <link rel="stylesheet" href="git.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        hljs.highlightAll();
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#f05032',
+                primaryTextColor: '#e6edf3',
+                primaryBorderColor: '#30363d',
+                lineColor: '#8b949e',
+                secondaryColor: '#4078c0',
+                tertiaryColor: '#161b22',
+                background: '#0d1117',
+                mainBkg: '#161b22',
+                secondBkg: '#0d1117',
+                textColor: '#e6edf3',
+                fontSize: '16px'
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>🔀 Git Guide</h2>
+        </div>
+        <div class="nav-section">
+            <h3>Part 1: Git</h3>
+            <ul>
+                <li><a href="#what-is-git">What is Git?</a></li>
+                <li><a href="#installing">Installing Git</a></li>
+                <li><a href="#configuration">Configuration</a></li>
+                <li><a href="#creating-repos">Creating Repositories</a></li>
+                <li><a href="#workflow">Git Workflow</a></li>
+                <li><a href="#basic-operations">Basic Operations</a></li>
+                <li><a href="#viewing-history">Viewing History</a></li>
+                <li><a href="#differences">Viewing Differences</a></li>
+                <li><a href="#branching">Branching & Merging</a></li>
+                <li><a href="#tagging">Tagging</a></li>
+                <li><a href="#undoing">Undoing Changes</a></li>
+                <li><a href="#stashing">Stashing</a></li>
+                <li><a href="#rebasing">Rebasing</a></li>
+                <li><a href="#cherry-pick">Cherry Picking</a></li>
+                <li><a href="#cleaning">Cleaning</a></li>
+                <li><a href="#searching">Searching</a></li>
+                <li><a href="#information">Information Commands</a></li>
+                <li><a href="#advanced-config">Advanced Configuration</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+        <div class="nav-section">
+            <h3>Part 2: GitHub</h3>
+            <ul>
+                <li><a href="#what-is-github">What is GitHub?</a></li>
+                <li><a href="#git-github-together">Git & GitHub Together</a></li>
+                <li><a href="#connecting">Connecting to GitHub</a></li>
+                <li><a href="#remote-repos">Remote Repositories</a></li>
+                <li><a href="#forking">Forking Workflow</a></li>
+                <li><a href="#pull-requests">Pull Requests</a></li>
+                <li><a href="#github-features">GitHub Features</a></li>
+                <li><a href="#collaboration">Collaboration</a></li>
+                <li><a href="#github-issues">Common Issues</a></li>
+                <li><a href="#github-best-practices">GitHub Best Practices</a></li>
+                <li><a href="#summary">Summary</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="page-header">
+            <h1>🔀 Git & GitHub Reference Guide</h1>
+            <p class="subtitle">A comprehensive guide to version control with Git and collaboration on GitHub</p>
+        </header>
+
+        <div class="intro-section">
+            <p>This guide is divided into two main parts:</p>
+            <ul>
+                <li><strong>Part 1:</strong> Git - The version control system itself</li>
+                <li><strong>Part 2:</strong> GitHub - The hosting platform and how it relates to Git</li>
+            </ul>
+        </div>
+
+        <section class="part-divider">
+            <h2>PART 1: GIT - The Version Control System</h2>
+            <p><strong>Git</strong> is a free, open-source distributed version control system. It is a standalone software tool that runs entirely on your local machine and does not require any external service or internet connection.</p>
+        </section>
+
+        <section id="what-is-git">
+            <h2>📖 What is Git?</h2>
+            <div class="fun-fact">
+                <p>Git stands for <strong>Goddamn idiotic truckload of 💩</strong> 😂</p>
+            </div>
+            <p>Git is a <strong>local version control system</strong> that:</p>
+            <ul>
+                <li>Tracks changes in files over time</li>
+                <li>Maintains complete project history</li>
+                <li>Allows branching and merging of code</li>
+                <li>Works completely offline</li>
+                <li>Is distributed (every clone is a full backup)</li>
+                <li>Was created by Linus Torvalds in 2005</li>
+            </ul>
+            <div class="important-note">
+                <strong>Important:</strong> Git is software you install on your computer. It has no built-in knowledge of GitHub, GitLab, or any hosting service.
+            </div>
+        </section>
+
+        <section id="installing">
+            <h2>🚀 Installing Git</h2>
+            <pre><code class="language-bash"># Ubuntu/Debian
+sudo apt update
+sudo apt install git
+
+# Fedora/RHEL
+sudo dnf install git
+
+# macOS (with Homebrew)
+brew install git
+
+# Verify installation
+git --version</code></pre>
+        </section>
+
+        <section id="configuration">
+            <h2>⚙️ Git Configuration</h2>
+            <h3>Initial Setup (Required)</h3>
+            <pre><code class="language-bash"># Set your identity (required for every commit)
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Set default branch name
+git config --global init.defaultBranch main
+
+# Set default editor
+git config --global core.editor "vim"
+
+# Or, you can set your default editor to VSCODE
+git config --global core.editor "code --wait"
+
+# Set merge tool 
+git config --global merge.tool vimdiff
+
+# Also, you can set the merge editor to VSCODE
+git config --global merge.tool vscode
+git config --global mergetool.vscode.cmd "code --wait $MERGED"
+
+# Enable colored output
+git config --global color.ui auto</code></pre>
+
+            <h3>View Configuration</h3>
+            <pre><code class="language-bash"># View all configuration
+git config --list
+
+# View global configuration
+git config --global --list
+
+# View specific setting
+git config user.name
+git config user.email
+
+# View where settings are defined
+git config --list --show-origin</code></pre>
+
+            <h3>Configuration Levels</h3>
+            <p>Git has three configuration levels:</p>
+            <pre><code class="language-bash"># System level (all users on the machine)
+git config --system setting.name "value"
+
+# Global level (your user account)
+git config --global setting.name "value"
+
+# Local level (current repository only)
+git config --local setting.name "value"</code></pre>
+            <p><strong>Priority:</strong> Local &gt; Global &gt; System</p>
+        </section>
+
+        <section id="creating-repos">
+            <h2>📂 Creating Repositories</h2>
+            <div class="warning-note">
+                <strong>⚠️ Important Note:</strong> Always check if a repository is already initialized before creating a new one by running <code>git status</code>
+            </div>
+            
+            <h3>Initialize a New Repository</h3>
+            <pre><code class="language-bash"># Initialize Git in current directory
+git init
+
+# Create new directory and initialize
+git init my-project
+cd my-project
+
+# Check status
+git status</code></pre>
+
+            <h3>Clone a Repository</h3>
+            <pre><code class="language-bash"># Clone from a local path
+git clone /path/to/repository
+
+# Clone from a network location (if accessible)
+git clone user@server:/path/to/repository
+
+# Clone to specific directory name
+git clone /path/to/repository my-folder
+
+# Shallow clone (only recent history)
+git clone --depth 1 /path/to/repository</code></pre>
+        </section>
+
+        <section id="workflow">
+            <h2>📊 Git Workflow - The Three States</h2>
+            <p>Every file in Git can be in one of three states:</p>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <strong>Working Directory</strong>
+                    <span>(Modified)</span>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <strong>Staging Area</strong>
+                    <span>(Staged)</span>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <strong>Repository</strong>
+                    <span>(Committed)</span>
+                </div>
+            </div>
+            <ul>
+                <li><strong>Working Directory:</strong> Where you modify files</li>
+                <li><strong>Staging Area (Index):</strong> Where you prepare files for commit</li>
+                <li><strong>Repository (.git directory):</strong> Where Git stores committed snapshots</li>
+            </ul>
+            
+            <h3>Visual Workflow</h3>
+            <div class="mermaid">
+gitGraph
+    commit id: "Initial commit"
+    commit id: "Add feature A"
+    commit id: "Fix bug in A"
+    commit id: "Add feature B"
+    commit id: "Update documentation"
+            </div>
+            <p class="diagram-caption">This diagram shows how commits build upon each other in a linear history. Each commit represents a snapshot saved in the repository after changes have moved through: <strong>Working Directory</strong> → <code>git add</code> → <strong>Staging Area</strong> → <code>git commit</code> → <strong>Repository</strong>.</p>
+        </section>
+
+        <section id="basic-operations">
+            <h2>📝 Basic Git Operations</h2>
+            
+            <h3>Checking Status</h3>
+            <pre><code class="language-bash"># View repository status
+git status
+
+# Short format
+git status -s
+
+# Show branch info
+git status -b</code></pre>
+
+            <h3>Adding Files to Staging</h3>
+            <pre><code class="language-bash"># Add specific file
+git add &lt;filename.txt&gt;
+
+# Add all files in current directory
+git add .
+
+# Add all changes (including deletions)
+git add -A
+
+# Using wild character to stage all the (e.g.) .js files
+git add *.js
+
+# Add files interactively [by asking you if you want to continue]
+git add -i
+
+# Add parts of a file
+git add -p &lt;filename.txt&gt;</code></pre>
+
+            <h3>Removing from Staging</h3>
+            <pre><code class="language-bash"># Unstage specific file
+git reset HEAD &lt;filename.txt&gt;
+
+# Unstage all files
+git reset HEAD
+
+# Modern syntax
+git restore --staged &lt;filename.txt&gt;</code></pre>
+
+            <h3>Committing Changes</h3>
+            <pre><code class="language-bash"># Commit staged changes
+git commit -m "Your commit message"
+
+# Add and commit in one step (tracked files only)
+git commit -a -m "Message"
+
+# Commit with multi-line message
+git commit
+
+# Amend last commit [only for the last commit done by you]
+git commit --amend -m "Updated message"
+
+# Commit with detailed message
+git commit -m "Short summary" -m "Detailed description"</code></pre>
+            <div class="tip-box">
+                <strong>💡 Tip:</strong> If you use <code>git commit</code> without any flags, your default editor will open, allowing you to write a multi-line commit message. The default editor is <strong>VIM</strong>, for which you can find an introduction in the <strong>VIM Editor Reference Guide</strong> page. Alternatively, you can change your default editor to VS Code for convenience, as explained in the configuration section above.
+            </div>
+        </section>
+
+        <section id="viewing-history">
+            <h2>📜 Viewing History</h2>
+            
+            <h3>Git Log</h3>
+            <pre><code class="language-bash"># View commit history
+git log
+
+# One line per commit
+git log --oneline
+
+# Show branch graph
+git log --graph --oneline --all
+
+# Show diffs
+git log -p
+
+# Show statistics
+git log --stat
+
+# Limit number of commits
+git log -n 5
+
+# Filter by date
+git log --since="2 weeks ago"
+git log --until="2023-12-31"
+git log --after="2023-01-01" --before="2023-12-31"
+
+# Filter by author
+git log --author="John"
+
+# Search commit messages
+git log --grep="bug fix"
+
+# Show commits affecting a file
+git log -- filename.txt</code></pre>
+
+            <h3>Show Commits</h3>
+            <pre><code class="language-bash"># Show latest commit
+git show
+
+# Show specific commit
+git show commit-hash
+
+# Show specific file from a commit
+git show commit-hash:path/to/file.txt
+
+# Show commit relative to HEAD
+git show HEAD~1    # Previous commit
+git show HEAD~3    # 3 commits ago
+git show HEAD^     # Parent of HEAD</code></pre>
+        </section>
+
+        <section id="differences">
+            <h2>🔍 Viewing Differences</h2>
+            <pre><code class="language-bash"># Changes in working directory (unstaged)
+git diff
+
+# Changes in staging area (staged)
+git diff --staged
+git diff --cached
+
+# All changes (staged and unstaged)
+git diff HEAD
+
+# Compare two commits
+git diff commit1 commit2
+
+# Compare branches
+git diff branch1 branch2
+
+# Compare specific file
+git diff filename.txt
+
+# Word-level diff
+git diff --word-diff</code></pre>
+        </section>
+
+        <section id="branching">
+            <h2>🌿 Branching and Merging</h2>
+            <p>Branches allow you to diverge from the main line of development and work independently.</p>
+            
+            <h3>Visual: Basic Branching and Merging</h3>
+            <div class="mermaid">
+gitGraph
+    commit id: "Initial commit"
+    commit id: "Add main feature"
+    branch feature-branch
+    checkout feature-branch
+    commit id: "Start feature"
+    commit id: "Complete feature"
+    checkout main
+    commit id: "Hotfix on main"
+    merge feature-branch
+    commit id: "Continue development"
+            </div>
+            <p class="diagram-caption">This diagram shows: (1) Creating a new branch (<code>feature-branch</code>) from <code>main</code>, (2) Making commits on the feature branch, (3) Meanwhile, <code>main</code> continues with its own commits, (4) Merging the feature branch back into <code>main</code></p>
+            
+            <h3>Listing Branches</h3>
+            <pre><code class="language-bash"># List all local branches
+git branch
+
+# List all branches (including remote-tracking)
+git branch -a
+
+# List remote-tracking branches
+git branch -r
+
+# Show current branch
+git branch --show-current</code></pre>
+
+            <h3>Creating and Switching Branches</h3>
+            <pre><code class="language-bash"># Create new branch
+git branch feature-branch
+
+# Switch to branch
+git checkout feature-branch
+
+# Create and switch in one command
+git checkout -b feature-branch
+
+# Modern syntax (Git 2.23+)
+git switch feature-branch
+git switch -c feature-branch
+
+# Create branch from specific commit
+git branch new-branch commit-hash</code></pre>
+
+            <h3>Renaming Branches</h3>
+            <pre><code class="language-bash"># Rename current branch
+git branch -m new-name
+
+# Rename specific branch
+git branch -m old-name new-name</code></pre>
+
+            <h3>Deleting Branches</h3>
+            <pre><code class="language-bash"># Delete merged branch
+git branch -d branch-name
+
+# Force delete branch
+git branch -D branch-name</code></pre>
+
+            <h3>Merging Branches</h3>
+            <pre><code class="language-bash"># Merge branch into current branch
+git merge feature-branch
+
+# Merge with no fast-forward (always create merge commit)
+git merge --no-ff feature-branch
+
+# Squash commits into one
+git merge --squash feature-branch
+
+# Abort merge
+git merge --abort</code></pre>
+
+            <h3>Handling Merge Conflicts</h3>
+            <p>When Git cannot automatically merge changes, you need to resolve conflicts manually.</p>
+            
+            <h4>Visual: How Merge Conflicts Occur</h4>
+            <div class="mermaid">
+gitGraph
+    commit id: "Initial"
+    commit id: "Add user.txt"
+    branch feature
+    checkout feature
+    commit id: "Edit user.txt line 5 (feature)" type: HIGHLIGHT
+    checkout main
+    commit id: "Edit user.txt line 5 (main)" type: REVERSE
+    merge feature tag: "CONFLICT!"
+    commit id: "Resolved conflict"
+            </div>
+            <p class="diagram-caption">This diagram shows a conflict scenario: Both <code>main</code> and <code>feature</code> branches modified the same line in <code>user.txt</code>. When merging, Git cannot decide which change to keep. You must manually resolve the conflict before completing the merge.</p>
+            
+            <pre><code class="language-bash"># When conflict occurs:
+# 1. View conflicted files
+git status
+
+# 2. Edit files to resolve conflicts (remove conflict markers)
+
+# 3. Mark as resolved
+git add conflicted-file.txt
+
+# 4. Complete the merge
+git commit</code></pre>
+        </section>
+
+        <section id="tagging">
+            <h2>🏷️ Tagging</h2>
+            <p>Tags are used to mark specific points in history (usually releases).</p>
+            <pre><code class="language-bash"># List all tags
+git tag
+
+# Create lightweight tag
+git tag v1.0.0
+
+# Create annotated tag (recommended)
+git tag -a v1.0.0 -m "Version 1.0.0"
+
+# Tag specific commit
+git tag -a v1.0.0 commit-hash -m "Message"
+
+# Show tag details
+git show v1.0.0
+
+# Delete tag
+git tag -d v1.0.0
+
+# List tags matching pattern
+git tag -l "v1.*"
+
+# Fetch tags from remote
+git fetch --tags
+
+# Checkout specific tag
+git checkout &lt;tag_name&gt;</code></pre>
+        </section>
+
+        <section id="undoing">
+            <h2>🔄 Undoing Changes</h2>
+            
+            <h3>Discard Changes in Working Directory</h3>
+            <pre><code class="language-bash"># Discard changes to specific file
+git checkout -- filename.txt
+
+# Modern syntax
+git restore filename.txt
+
+# Discard all changes
+git checkout -- .
+git restore .</code></pre>
+
+            <h3>Unstage Files</h3>
+            <pre><code class="language-bash"># Unstage file
+git reset HEAD filename.txt
+git restore --staged filename.txt</code></pre>
+
+            <h3>Undo Commits</h3>
+            <pre><code class="language-bash"># Undo last commit, keep changes staged
+git reset --soft HEAD~1
+
+# Undo last commit, keep changes unstaged (default)
+git reset HEAD~1
+git reset --mixed HEAD~1
+
+# Undo last commit, discard all changes
+git reset --hard HEAD~1
+
+# Undo multiple commits
+git reset --hard HEAD~3</code></pre>
+
+            <h3>Revert Commits</h3>
+            <pre><code class="language-bash"># Create new commit that undoes a commit (safe for shared repos)
+git revert commit-hash
+
+# Revert last commit
+git revert HEAD
+
+# Revert multiple commits
+git revert commit1 commit2 commit3</code></pre>
+        </section>
+
+        <section id="stashing">
+            <h2>💾 Stashing Changes</h2>
+            <p>Stashing saves your work-in-progress without committing.</p>
+            <pre><code class="language-bash"># Stash changes
+git stash
+
+# Stash with message
+git stash push -m "Work in progress on feature X"
+
+# Include untracked files
+git stash -u
+
+# Include ignored files
+git stash -a
+
+# List stashes
+git stash list
+
+# Show stash contents
+git stash show
+git stash show -p    # Show as diff
+
+# Apply latest stash
+git stash apply
+
+# Apply and remove latest stash
+git stash pop
+
+# Apply specific stash
+git stash apply stash@{2}
+
+# Create branch from stash
+git stash branch new-branch
+
+# Drop specific stash
+git stash drop stash@{1}
+
+# Clear all stashes
+git stash clear</code></pre>
+        </section>
+
+        <section id="rebasing">
+            <h2>🔄 Rebasing</h2>
+            <div class="danger-note">
+                <strong>⚠️ Important Note:</strong> Rebasing can be dangerous. If you are not confident with Git, do not use <strong>rebasing</strong>.
+            </div>
+            <p>Rebasing rewrites commit history by moving commits to a new base.</p>
+            
+            <h3>Visual: Merge vs Rebase</h3>
+            <h4>Before (Common History):</h4>
+            <div class="mermaid">
+gitGraph
+    commit id: "A"
+    commit id: "B"
+    branch feature
+    checkout feature
+    commit id: "C"
+    commit id: "D"
+    checkout main
+    commit id: "E"
+    commit id: "F"
+            </div>
+            
+            <h4>After Merge (Creates merge commit):</h4>
+            <div class="mermaid">
+gitGraph
+    commit id: "A"
+    commit id: "B"
+    branch feature
+    checkout feature
+    commit id: "C"
+    commit id: "D"
+    checkout main
+    commit id: "E"
+    commit id: "F"
+    merge feature
+    commit id: "Continue..."
+            </div>
+            
+            <h4>After Rebase (Linear history):</h4>
+            <div class="mermaid">
+gitGraph
+    commit id: "A"
+    commit id: "B"
+    commit id: "E"
+    commit id: "F"
+    commit id: "C'"
+    commit id: "D'"
+            </div>
+            <p class="diagram-caption">Notice how rebase replays commits C and D on top of F, creating new commits C' and D' with different commit hashes. This is why it's dangerous for shared branches!</p>
+            
+            <h3>Why Rebasing Can Be Dangerous</h3>
+            <div class="golden-rule">
+                <strong>The Golden Rule: Never rebase commits that have been pushed to a shared repository!</strong>
+            </div>
+            <p>Rebasing changes commit hashes (rewrites history), which causes problems when:</p>
+            <ol>
+                <li><strong>Collaborators have your commits:</strong> If others have pulled your commits, rebasing creates duplicate commits with different hashes, causing confusion and merge conflicts.</li>
+                <li><strong>Loss of commit history:</strong> Rebasing can make it difficult to track when changes were actually made, as timestamps change.</li>
+                <li><strong>Merge conflicts:</strong> If conflicts occur during rebase, you must resolve them for each commit being rebased (potentially many times).</li>
+                <li><strong>Destructive operation:</strong> Unlike merge, rebase can lose information about when parallel development happened.</li>
+            </ol>
+            
+            <h3>Safe Usage</h3>
+            <ul class="checklist">
+                <li class="check">✅ Rebase your <strong>local</strong> commits before pushing</li>
+                <li class="check">✅ Rebase your feature branch onto updated main before creating a pull request</li>
+                <li class="cross">❌ <strong>Never</strong> rebase commits that exist on a remote branch others are using</li>
+                <li class="cross">❌ <strong>Never</strong> rebase the main/master branch</li>
+            </ul>
+            
+            <pre><code class="language-bash"># Rebase current branch onto main
+git rebase main
+
+# Interactive rebase (last 3 commits)
+git rebase -i HEAD~3
+
+# Continue after resolving conflicts
+git rebase --continue
+
+# Skip current commit
+git rebase --skip
+
+# Abort rebase
+git rebase --abort</code></pre>
+        </section>
+
+        <section id="cherry-pick">
+            <h2>🍒 Cherry Picking</h2>
+            <p>Apply specific commits from one branch to another.</p>
+            <pre><code class="language-bash"># Apply single commit
+git cherry-pick commit-hash
+
+# Apply multiple commits
+git cherry-pick commit1 commit2
+
+# Apply without committing
+git cherry-pick --no-commit commit-hash
+
+# Abort cherry-pick
+git cherry-pick --abort</code></pre>
+        </section>
+
+        <section id="cleaning">
+            <h2>🧹 Cleaning Repository</h2>
+            <pre><code class="language-bash"># Show what would be removed (dry run)
+git clean -n
+
+# Remove untracked files
+git clean -f
+
+# Remove untracked files and directories
+git clean -fd
+
+# Remove ignored files too
+git clean -fx</code></pre>
+        </section>
+
+        <section id="searching">
+            <h2>🔍 Searching in Git</h2>
+            <pre><code class="language-bash"># Search for string in working directory
+git grep "search term"
+
+# Search in specific commit
+git grep "search term" commit-hash
+
+# Search and show line numbers
+git grep -n "search term"
+
+# Search for commits that added/removed a string
+git log -S "search term"
+
+# Search commit messages
+git log --grep="bug fix"</code></pre>
+        </section>
+
+        <section id="information">
+            <h2>📊 Git Information Commands</h2>
+            <pre><code class="language-bash"># Show commit that last modified each line
+git blame filename.txt
+
+# Show commit log for a file
+git log --follow filename.txt
+
+# Show who changed what and when
+git log -p filename.txt
+
+# Show all commits that touched a file
+git log --all -- filename.txt
+
+# Show file content at specific commit
+git show commit-hash:filename.txt
+
+# List files in a commit
+git show --name-only commit-hash</code></pre>
+        </section>
+
+        <section id="advanced-config">
+            <h2>🛠️ Advanced Git Configuration</h2>
+            
+            <h3>Git Aliases</h3>
+            <p>Git aliases are custom shortcuts that let you create abbreviated commands for frequently used Git operations.</p>
+            
+            <h4>Creating Aliases</h4>
+            <pre><code class="language-bash"># Basic syntax
+git config --global alias.&lt;alias-name&gt; '&lt;git-command&gt;'
+
+# Common useful aliases
+git config --global alias.st status
+git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.ci commit
+git config --global alias.unstage 'reset HEAD --'
+git config --global alias.last 'log -1 HEAD'
+git config --global alias.lg 'log --oneline --graph --decorate --all'
+
+# More advanced aliases
+git config --global alias.uncommit 'reset --soft HEAD~1'
+git config --global alias.amend 'commit --amend --no-edit'
+git config --global alias.aliases "config --get-regexp '^alias\.'"</code></pre>
+
+            <h3>Global Ignore File (.gitignore)</h3>
+            <p>The <code>.gitignore</code> file tells Git which files to ignore and not track.</p>
+            
+            <h4>Creating Global .gitignore</h4>
+            <pre><code class="language-bash"># Set up global gitignore file
+git config --global core.excludesfile ~/.gitignore_global
+
+# Create the file if it doesn't exist
+touch ~/.gitignore_global</code></pre>
+
+            <h4>Common Global Ignore Patterns</h4>
+            <pre><code class="language-bash"># macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Vim swap files
+*.swp
+*.swo
+*~
+
+# VS Code settings
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Node.js
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp</code></pre>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>🆘 Git Troubleshooting</h2>
+            
+            <h3>Recover Lost Commits</h3>
+            <pre><code class="language-bash"># Show reference log
+git reflog
+
+# Checkout lost commit
+git checkout commit-hash
+
+# Create branch from lost commit
+git branch recovered-branch commit-hash</code></pre>
+
+            <h3>Fix Detached HEAD</h3>
+            <pre><code class="language-bash"># Create branch from current position
+git branch temp-branch
+
+# Or switch back to a branch
+git switch main</code></pre>
+
+            <h3>Remove File from History</h3>
+            <pre><code class="language-bash"># Remove file from all commits (use carefully!)
+git filter-branch --tree-filter 'rm -f passwords.txt' HEAD</code></pre>
+        </section>
+
+        <section id="best-practices">
+            <h2>📚 Git Best Practices</h2>
+            <ol>
+                <li><strong>Commit Often:</strong> Make small, focused commits</li>
+                <li><strong>Write Clear Messages:</strong> Explain what and why, not how</li>
+                <li><strong>Use Branches:</strong> Keep main branch stable</li>
+                <li><strong>Review Before Commit:</strong> Check <code>git diff</code> before staging</li>
+                <li><strong>Pull Before Push:</strong> Always sync before sharing changes</li>
+                <li><strong>Never Rebase Public History:</strong> Only rebase local commits</li>
+                <li><strong>Use .gitignore:</strong> Don't commit generated or sensitive files</li>
+                <li><strong>Tag Releases:</strong> Mark important milestones</li>
+            </ol>
+            
+            <h3>Good Commit Message Format</h3>
+            <pre><code>Short summary (50 chars or less)
+
+More detailed explanation if needed. Wrap at 72 characters.
+Explain what changed and why, not how.
+
+- Bullet points are okay
+- Use present tense: "Fix bug" not "Fixed bug"</code></pre>
+        </section>
+
+        <section class="part-divider">
+            <h2>PART 2: GITHUB - The Hosting Platform</h2>
+            <p><strong>GitHub</strong> is a web-based platform that provides hosting for Git repositories. It is <strong>NOT</strong> Git itself - it's a service built around Git.</p>
+        </section>
+
+        <section id="what-is-github">
+            <h2>🌐 What is GitHub?</h2>
+            <p>GitHub is:</p>
+            <ul>
+                <li>A <strong>hosting service</strong> for Git repositories</li>
+                <li>A <strong>web interface</strong> for Git</li>
+                <li>A <strong>collaboration platform</strong> with additional features</li>
+                <li><strong>One of many</strong> Git hosting options (GitLab, Bitbucket are alternatives)</li>
+            </ul>
+            <div class="important-note">
+                <strong>Important:</strong> GitHub requires Git, but Git does NOT require GitHub.
+            </div>
+        </section>
+
+        <section id="git-github-together">
+            <h2>🔗 How Git and GitHub Work Together</h2>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <strong>Your Computer (Git)</strong>
+                    <span>Local Repo</span>
+                </div>
+                <div class="workflow-arrow">↔</div>
+                <div class="workflow-step">
+                    <strong>GitHub Servers</strong>
+                    <span>Remote Repo ("origin")</span>
+                </div>
+            </div>
+            <ul>
+                <li><strong>Git:</strong> Manages version control on your computer</li>
+                <li><strong>GitHub:</strong> Stores a copy of your repository online and adds collaboration features</li>
+            </ul>
+        </section>
+
+        <section id="connecting">
+            <h2>🔐 Connecting Git to GitHub</h2>
+            
+            <h3>Authentication Methods</h3>
+            
+            <h4>1. HTTPS (Username + Personal Access Token)</h4>
+            <pre><code class="language-bash"># Clone with HTTPS
+git clone https://github.com/username/repository.git
+
+# GitHub will prompt for credentials
+# Username: your-username
+# Password: your-personal-access-token (not your GitHub password!)</code></pre>
+
+            <h4>2. SSH (Recommended for frequent use)</h4>
+            <pre><code class="language-bash"># Generate SSH key
+ssh-keygen -t ed25519 -C "your.email@example.com"
+
+# Start SSH agent
+eval "$(ssh-agent -s)"
+
+# Add key to agent
+ssh-add ~/.ssh/id_ed25519
+
+# Copy public key
+cat ~/.ssh/id_ed25519.pub
+
+# Add this key to GitHub: Settings → SSH and GPG keys → New SSH key
+
+# Test connection
+ssh -T git@github.com
+
+# Clone with SSH
+git clone git@github.com:username/repository.git</code></pre>
+        </section>
+
+        <section id="remote-repos">
+            <h2>🌍 Working with Remote Repositories</h2>
+            
+            <h3>Remote Basics</h3>
+            <pre><code class="language-bash"># View remotes
+git remote
+git remote -v
+
+# Add remote
+git remote add origin https://github.com/username/repo.git
+
+# Change remote URL
+git remote set-url origin git@github.com:username/repo.git
+
+# Remove remote
+git remote remove origin
+
+# Rename remote
+git remote rename origin upstream
+
+# Show remote details
+git remote show origin</code></pre>
+
+            <h3>Getting Latest Updates from Remote</h3>
+            <pre><code class="language-bash"># Prune remote references (remove outdated remote-tracking branches)
+git remote prune origin
+# or
+git remote -p</code></pre>
+            <div class="warning-note">
+                <strong>⚠️ Important Authentication Note:</strong> Check your remote URL first with <code>git remote -v</code>. If it shows HTTPS URLs, you'll need to provide username and password/token, or switch to SSH authentication.
+            </div>
+
+            <h3>Pushing to GitHub</h3>
+            <pre><code class="language-bash"># Push current branch
+git push
+
+# Push specific branch
+git push origin main
+
+# Push and set upstream (first time)
+git push -u origin main
+
+# Push all branches
+git push --all
+
+# Push tags
+git push --tags
+
+# Force push (dangerous - overwrites remote)
+git push --force
+
+# Safer force push
+git push --force-with-lease</code></pre>
+
+            <h3>Pulling from GitHub</h3>
+            <pre><code class="language-bash"># Fetch and merge
+git pull
+
+# Fetch without merge
+git fetch
+
+# Pull specific branch
+git pull origin main
+
+# Pull with rebase
+git pull --rebase</code></pre>
+
+            <h3>Fetching vs Pulling</h3>
+            <pre><code class="language-bash"># FETCH: Download changes but don't merge
+git fetch origin
+# Your local branches are unchanged
+# Remote-tracking branches are updated
+
+# PULL: Fetch + Merge
+git pull origin main
+# Same as:
+git fetch origin
+git merge origin/main</code></pre>
+        </section>
+
+        <section id="forking">
+            <h2>🍴 GitHub Forking Workflow</h2>
+            <p>Forking creates a personal copy of someone else's repository on GitHub. This is the standard workflow for contributing to open-source projects.</p>
+            
+            <h3>Visual: Fork Workflow</h3>
+            <div class="mermaid">
+gitGraph
+    commit id: "upstream/main: A"
+    commit id: "upstream/main: B"
+    branch origin/main
+    checkout origin/main
+    commit id: "Fork created" type: HIGHLIGHT
+    branch feature
+    checkout feature
+    commit id: "Your feature: C"
+    commit id: "Your feature: D"
+    checkout origin/main
+    merge feature tag: "Ready for PR"
+            </div>
+            <p class="diagram-caption">This diagram represents: <strong>Top line:</strong> Original repository (upstream), <strong>Middle line:</strong> Your forked repository (origin), <strong>Bottom line:</strong> Your feature branch where you make changes. After completing your feature, you push to your fork and create a PR to upstream.</p>
+            
+            <pre><code class="language-bash"># 1. Fork repository on GitHub web interface
+
+# 2. Clone YOUR fork
+git clone git@github.com:YOUR-USERNAME/repo.git
+cd repo
+
+# 3. Add original repo as "upstream"
+git remote add upstream git@github.com:ORIGINAL-OWNER/repo.git
+
+# 4. Verify remotes
+git remote -v
+# origin    -> your fork
+# upstream  -> original repo
+
+# 5. Keep your fork updated
+git fetch upstream
+git checkout main
+git merge upstream/main
+git push origin main</code></pre>
+        </section>
+
+        <section id="pull-requests">
+            <h2>🔀 GitHub Pull Request Workflow</h2>
+            <p>A Pull Request (PR) is a GitHub feature that lets you propose changes to a repository and request that they be reviewed and merged.</p>
+            
+            <h3>Visual: Complete PR Workflow</h3>
+            <div class="mermaid">
+gitGraph
+    commit id: "main: Start"
+    commit id: "main: Stable"
+    branch feature/new-feature
+    checkout feature/new-feature
+    commit id: "Add feature part 1"
+    commit id: "Add feature part 2"
+    commit id: "Add tests"
+    checkout main
+    commit id: "Other changes"
+    checkout feature/new-feature
+    merge main tag: "Update from main"
+    commit id: "Address review comments"
+    checkout main
+    merge feature/new-feature tag: "PR Merged!"
+    commit id: "Continue development"
+            </div>
+            <p class="diagram-caption">This workflow shows: (1) Create a feature branch from <code>main</code>, (2) Make commits on your feature branch, (3) Optionally update your branch with latest <code>main</code> changes, (4) Address code review feedback with additional commits, (5) After approval, merge the PR into <code>main</code>, (6) Delete the feature branch and continue development.</p>
+            
+            <pre><code class="language-bash"># 1. Create feature branch
+git checkout -b feature/new-feature
+
+# 2. Make changes and commit
+git add .
+git commit -m "Add new feature"
+
+# 3. Push to YOUR fork
+git push origin feature/new-feature
+
+# 4. Go to GitHub and create Pull Request
+
+# 5. After PR is merged, update your main
+git checkout main
+git pull upstream main
+
+# 6. Delete feature branch
+git branch -d feature/new-feature
+git push origin --delete feature/new-feature</code></pre>
+        </section>
+
+        <section id="github-features">
+            <h2>📦 GitHub-Specific Features</h2>
+            
+            <h3>Issues</h3>
+            <ul>
+                <li><strong>Bug Reports:</strong> Track bugs and problems</li>
+                <li><strong>Feature Requests:</strong> Suggest new features</li>
+                <li><strong>Task Lists:</strong> Track work items</li>
+                <li><strong>Labels:</strong> Categorize issues (bug, enhancement, documentation)</li>
+                <li><strong>Milestones:</strong> Group issues for releases</li>
+                <li><strong>Assignees:</strong> Assign responsibility</li>
+            </ul>
+
+            <h3>Projects</h3>
+            <ul>
+                <li><strong>Kanban Boards:</strong> Visual project management</li>
+                <li><strong>Automation:</strong> Move cards based on events</li>
+                <li><strong>Integration:</strong> Link to issues and PRs</li>
+            </ul>
+
+            <h3>GitHub Actions</h3>
+            <ul>
+                <li><strong>CI/CD:</strong> Automated testing and deployment</li>
+                <li><strong>Workflows:</strong> Define custom automation</li>
+                <li><strong>Triggers:</strong> Run on push, PR, schedule, etc.</li>
+            </ul>
+
+            <h3>Other Features</h3>
+            <ul>
+                <li><strong>GitHub Pages:</strong> Free static site hosting</li>
+                <li><strong>Wiki:</strong> Project documentation</li>
+                <li><strong>Discussions:</strong> Community conversations</li>
+                <li><strong>Security Alerts:</strong> Vulnerability notifications</li>
+                <li><strong>Code Review:</strong> Line-by-line commenting</li>
+                <li><strong>Branch Protection:</strong> Enforce workflow rules</li>
+                <li><strong>Releases:</strong> Package and distribute software</li>
+            </ul>
+        </section>
+
+        <section id="collaboration">
+            <h2>🤝 Collaboration on GitHub</h2>
+            
+            <h3>Code Review Process</h3>
+            <pre><code class="language-bash"># 1. Team member creates PR
+
+# 2. Reviewers comment on code
+
+# 3. Author makes changes
+git checkout feature-branch
+git add .
+git commit -m "Address review comments"
+git push origin feature-branch
+
+# 4. After approval, merge PR on GitHub
+
+# 5. Delete branch
+git push origin --delete feature-branch</code></pre>
+        </section>
+
+        <section id="github-issues">
+            <h2>🆘 Common GitHub Issues</h2>
+            
+            <h3>Push Rejected</h3>
+            <pre><code class="language-bash"># Error: Updates were rejected because the remote contains work that you do not have
+
+# Solution: Pull first, then push
+git pull --rebase origin main
+git push origin main</code></pre>
+
+            <h3>Authentication Failed</h3>
+            <pre><code class="language-bash"># For HTTPS: Use Personal Access Token, not password
+# Generate token: GitHub Settings → Developer settings → Personal access tokens
+
+# For SSH: Check key is added to GitHub
+ssh -T git@github.com</code></pre>
+
+            <h3>Conflict in Pull Request</h3>
+            <pre><code class="language-bash"># Update your branch with latest main
+git checkout your-feature-branch
+git fetch upstream
+git merge upstream/main
+
+# Resolve conflicts
+# ... edit files ...
+git add .
+git commit -m "Resolve merge conflicts"
+
+# Push updated branch
+git push origin your-feature-branch</code></pre>
+        </section>
+
+        <section id="github-best-practices">
+            <h2>📚 GitHub Best Practices</h2>
+            <ol>
+                <li><strong>Use Descriptive Repo Names:</strong> Clear and specific</li>
+                <li><strong>Write Good README:</strong> Explain what, why, how</li>
+                <li><strong>Use .gitignore:</strong> Don't commit unnecessary files</li>
+                <li><strong>Create Branches:</strong> Use feature branches for development</li>
+                <li><strong>Write Good PR Descriptions:</strong> Explain changes clearly</li>
+                <li><strong>Respond to Reviews:</strong> Address feedback promptly</li>
+                <li><strong>Keep Main Clean:</strong> Only merge tested, working code</li>
+                <li><strong>Use Issues:</strong> Track work and discussions</li>
+                <li><strong>Tag Releases:</strong> Mark stable versions</li>
+                <li><strong>Secure Your Account:</strong> Enable 2FA, use SSH keys</li>
+            </ol>
+        </section>
+
+        <section id="summary">
+            <h2>🎯 Git vs GitHub Summary</h2>
+            
+            <h3>Git (Version Control System)</h3>
+            <ul>
+                <li><strong>What:</strong> Software tool for version control</li>
+                <li><strong>Where:</strong> Runs on your local computer</li>
+                <li><strong>Internet:</strong> Not required</li>
+                <li><strong>Cost:</strong> Free and open-source</li>
+                <li><strong>Alternatives:</strong> Mercurial, SVN (but Git is industry standard)</li>
+            </ul>
+
+            <h3>GitHub (Hosting Platform)</h3>
+            <ul>
+                <li><strong>What:</strong> Web-based Git repository hosting service</li>
+                <li><strong>Where:</strong> Cloud servers (github.com)</li>
+                <li><strong>Internet:</strong> Required</li>
+                <li><strong>Cost:</strong> Free for public repos, paid for private features</li>
+                <li><strong>Alternatives:</strong> GitLab, Bitbucket, Gitea, self-hosted Git servers</li>
+            </ul>
+
+            <h3>The Relationship</h3>
+            <div class="analogy-box">
+                <p><strong>Git = Car</strong> (gets you from A to B)</p>
+                <p><strong>GitHub = Parking garage + car wash + repair shop</strong> (extra services)</p>
+                <br>
+                <p>You can use Git without GitHub.</p>
+                <p>You cannot use GitHub without Git.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Git & GitHub Reference Guide | Created with ❤️ for developers</p>
+    </footer>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Highlight current section in sidebar
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

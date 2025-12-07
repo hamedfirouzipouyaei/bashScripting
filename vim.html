@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIM Editor Reference Guide</title>
+    <link rel="stylesheet" href="vim.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        hljs.highlightAll();
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#019833',
+                primaryTextColor: '#f8f8f2',
+                primaryBorderColor: '#49483e',
+                lineColor: '#75715e',
+                secondaryColor: '#66d9ef',
+                tertiaryColor: '#272822',
+                background: '#1e1e1e',
+                mainBkg: '#272822',
+                secondBkg: '#1e1e1e',
+                textColor: '#f8f8f2',
+                fontSize: '16px'
+            }
+        });
+    </script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>📝 VIM Guide</h2>
+        </div>
+        <div class="nav-section">
+            <ul>
+                <li><a href="#overview">VIM Modes Overview</a></li>
+                <li><a href="#insert-mode">Entering Insert Mode</a></li>
+                <li><a href="#last-line-mode">Last Line Mode</a></li>
+                <li><a href="#command-mode">Command Mode Shortcuts</a></li>
+                <li><a href="#multiple-files">Working with Multiple Files</a></li>
+                <li><a href="#quick-reference">Quick Reference</a></li>
+                <li><a href="#pro-tips">Pro Tips</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="page-header">
+            <h1>📝 VIM Editor Reference Guide</h1>
+            <p class="subtitle">Master the powerful, modal text editor essential for Linux administration and development</p>
+        </header>
+
+        <div class="intro-section">
+            <p><strong>VIM (Vi IMproved)</strong> is a powerful, modal text editor that's essential for Linux system administration and development.</p>
+        </div>
+
+        <section id="overview">
+            <h2>🎯 VIM Modes Overview</h2>
+            <p>VIM operates in three primary modes:</p>
+            <div class="modes-container">
+                <div class="mode-card command-mode">
+                    <h3>Command Mode</h3>
+                    <p>Default mode for navigation and text manipulation</p>
+                </div>
+                <div class="mode-card insert-mode">
+                    <h3>Insert Mode</h3>
+                    <p>For typing and editing text</p>
+                </div>
+                <div class="mode-card lastline-mode">
+                    <h3>Last Line Mode</h3>
+                    <p>For executing commands, saving, and quitting</p>
+                </div>
+            </div>
+            
+            <div class="config-note">
+                <strong>VIM Configuration File:</strong> <code>~/.vimrc</code>
+            </div>
+
+            <h3>Mode Transitions</h3>
+            <div class="mermaid">
+                graph TD
+                    Start([VIM starts]) --> CMD[Command Mode]
+                    CMD -->|i, a, o, I, A, O| INS[Insert Mode]
+                    INS -->|ESC| CMD
+                    CMD -->|:| LAST[Last Line Mode]
+                    LAST -->|ESC or Enter| CMD
+                    CMD -->|:q, ZZ, ZQ| End([Exit VIM])
+                    
+                    style CMD fill:#019833,stroke:#019833,color:#fff
+                    style INS fill:#66d9ef,stroke:#66d9ef,color:#000
+                    style LAST fill:#fd971f,stroke:#fd971f,color:#000
+            </div>
+            <p class="diagram-caption">This diagram shows how to transition between VIM's three modes. Press <code>ESC</code> to always return to Command Mode.</p>
+        </section>
+
+        <section id="insert-mode">
+            <h2>✏️ Entering Insert Mode</h2>
+            <p>Switch from <strong>Command Mode</strong> to <strong>Insert Mode</strong> using these keys:</p>
+            
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>i</kbd></td>
+                        <td>Insert before cursor</td>
+                        <td>Start typing at current cursor position</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>I</kbd></td>
+                        <td>Insert at beginning of line</td>
+                        <td>Move to start of line and enter insert mode</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>a</kbd></td>
+                        <td>Insert after cursor</td>
+                        <td>Move cursor one position right and insert</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>A</kbd></td>
+                        <td>Insert at end of line</td>
+                        <td>Move to end of line and enter insert mode</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>o</kbd></td>
+                        <td>Insert on next line</td>
+                        <td>Create new line below and enter insert mode</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>O</kbd></td>
+                        <td>Insert on previous line</td>
+                        <td>Create new line above and enter insert mode</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="last-line-mode">
+            <h2>💻 Last Line Mode</h2>
+            
+            <h3>Entering Last Line Mode</h3>
+            <p>From <strong>Command Mode</strong>, press <kbd>:</kbd> to enter <strong>Last Line Mode</strong>.</p>
+            
+            <h3>Essential Last Line Commands</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>:w!</code></td>
+                        <td>Write/Save</td>
+                        <td>Save the file (force write)</td>
+                    </tr>
+                    <tr>
+                        <td><code>:q!</code></td>
+                        <td>Quit without saving</td>
+                        <td>Exit without saving changes</td>
+                    </tr>
+                    <tr>
+                        <td><code>:wq!</code></td>
+                        <td>Save and quit</td>
+                        <td>Write file and exit</td>
+                    </tr>
+                    <tr>
+                        <td><code>:e!</code></td>
+                        <td>Reload file</td>
+                        <td>Undo all changes to last saved version</td>
+                    </tr>
+                    <tr>
+                        <td><code>:set nu</code></td>
+                        <td>Show line numbers</td>
+                        <td>Display line numbers</td>
+                    </tr>
+                    <tr>
+                        <td><code>:set nonu</code></td>
+                        <td>Hide line numbers</td>
+                        <td>Remove line number display</td>
+                    </tr>
+                    <tr>
+                        <td><code>:syntax on</code></td>
+                        <td>Enable syntax highlighting</td>
+                        <td>Turn on syntax coloring</td>
+                    </tr>
+                    <tr>
+                        <td><code>:syntax off</code></td>
+                        <td>Disable syntax highlighting</td>
+                        <td>Turn off syntax coloring</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Search and Replace</h3>
+            <pre><code class="language-vim"># Replace all occurrences in the file
+:%s/search_string/replace_string/g
+
+# Replace in current line only
+:s/search_string/replace_string/g
+
+# Replace with confirmation
+:%s/search_string/replace_string/gc</code></pre>
+        </section>
+
+        <section id="command-mode">
+            <h2>⌨️ Command Mode Shortcuts</h2>
+            
+            <h3>Returning to Command Mode</h3>
+            <div class="tip-box">
+                Press <kbd>ESC</kbd> to return to <strong>Command Mode</strong> from any other mode.
+            </div>
+            
+            <h3>Text Editing</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>x</kbd></td>
+                        <td>Delete character</td>
+                        <td>Remove character under cursor</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>dd</kbd></td>
+                        <td>Delete line</td>
+                        <td>Cut/delete current line</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>5dd</kbd></td>
+                        <td>Delete 5 lines</td>
+                        <td>Cut/delete 5 lines from cursor</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>u</kbd></td>
+                        <td>Undo</td>
+                        <td>Undo last change</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>Ctrl+r</kbd></td>
+                        <td>Redo</td>
+                        <td>Redo last undone change</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Copy and Paste</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>y</kbd></td>
+                        <td>Yank/Copy</td>
+                        <td>Copy selected text to clipboard</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>yy</kbd></td>
+                        <td>Copy line</td>
+                        <td>Copy current line</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>5yy</kbd></td>
+                        <td>Copy 5 lines</td>
+                        <td>Copy 5 lines from cursor</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>p</kbd></td>
+                        <td>Paste after</td>
+                        <td>Paste clipboard content after cursor</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>P</kbd></td>
+                        <td>Paste before</td>
+                        <td>Paste clipboard content before cursor</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Navigation</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>G</kbd></td>
+                        <td>Go to end of file</td>
+                        <td>Move cursor to last line</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>gg</kbd></td>
+                        <td>Go to beginning of file</td>
+                        <td>Move cursor to first line</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>$</kbd></td>
+                        <td>End of line</td>
+                        <td>Move to end of current line</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>0</kbd> or <kbd>^</kbd></td>
+                        <td>Beginning of line</td>
+                        <td>Move to start of current line</td>
+                    </tr>
+                    <tr>
+                        <td><code>:n</code></td>
+                        <td>Go to line n</td>
+                        <td>Move to specific line number (e.g., <code>:10</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>w</kbd></td>
+                        <td>Next word</td>
+                        <td>Move to beginning of next word</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>b</kbd></td>
+                        <td>Previous word</td>
+                        <td>Move to beginning of previous word</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Selection</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>Shift+v</kbd></td>
+                        <td>Select line</td>
+                        <td>Select entire current line</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>v</kbd></td>
+                        <td>Visual mode</td>
+                        <td>Start character-wise selection</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>Ctrl+v</kbd></td>
+                        <td>Visual block</td>
+                        <td>Start block selection</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Search</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/string</code></td>
+                        <td>Search forward</td>
+                        <td>Search for "string" from cursor down</td>
+                    </tr>
+                    <tr>
+                        <td><code>?string</code></td>
+                        <td>Search backward</td>
+                        <td>Search for "string" from cursor up</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>n</kbd></td>
+                        <td>Next occurrence</td>
+                        <td>Move to next search result</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>N</kbd></td>
+                        <td>Previous occurrence</td>
+                        <td>Move to previous search result</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Save and Exit</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>ZZ</kbd></td>
+                        <td>Save and quit</td>
+                        <td>Quick save and exit (same as <code>:wq</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>ZQ</kbd></td>
+                        <td>Quit without saving</td>
+                        <td>Quick exit without saving (same as <code>:q!</code>)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="multiple-files">
+            <h2>🔀 Working with Multiple Files</h2>
+            
+            <h3>Opening Multiple Files</h3>
+            <pre><code class="language-bash"># Open files in horizontal split windows
+vim -o file1 file2
+
+# Open files in vertical split windows  
+vim -O file1 file2
+
+# Compare files side by side (diff mode)
+vim -d file1 file2</code></pre>
+
+            <h3>Window Navigation</h3>
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><kbd>Ctrl+w</kbd> then <kbd>w</kbd></td>
+                        <td>Switch windows</td>
+                        <td>Move between open files</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>Ctrl+w</kbd> then <kbd>h/j/k/l</kbd></td>
+                        <td>Navigate windows</td>
+                        <td>Move left/down/up/right between windows</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>Ctrl+w</kbd> then <kbd>q</kbd></td>
+                        <td>Close window</td>
+                        <td>Close current window</td>
+                    </tr>
+                    <tr>
+                        <td><kbd>Ctrl+w</kbd> then <kbd>o</kbd></td>
+                        <td>Close others</td>
+                        <td>Close all windows except current</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>File Management</h3>
+            <pre><code class="language-vim"># Open new file in current window
+:e filename
+
+# Open file in new horizontal split
+:sp filename
+
+# Open file in new vertical split
+:vsp filename
+
+# List open buffers
+:ls
+
+# Switch to buffer number n
+:bn</code></pre>
+        </section>
+
+        <section id="quick-reference">
+            <h2>🚀 Quick Reference Summary</h2>
+            
+            <h3>Most Used Commands</h3>
+            <div class="command-grid">
+                <div class="command-card">
+                    <kbd>:w</kbd>
+                    <p>Save</p>
+                </div>
+                <div class="command-card">
+                    <kbd>:q</kbd>
+                    <p>Quit</p>
+                </div>
+                <div class="command-card">
+                    <kbd>:wq</kbd>
+                    <p>Save and quit</p>
+                </div>
+                <div class="command-card">
+                    <kbd>:q!</kbd>
+                    <p>Quit without saving</p>
+                </div>
+                <div class="command-card">
+                    <kbd>u</kbd>
+                    <p>Undo</p>
+                </div>
+                <div class="command-card">
+                    <kbd>dd</kbd>
+                    <p>Delete line</p>
+                </div>
+                <div class="command-card">
+                    <code>/search</code>
+                    <p>Search</p>
+                </div>
+                <div class="command-card">
+                    <kbd>n</kbd>
+                    <p>Next search result</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="pro-tips">
+            <h2>💡 Pro Tips</h2>
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <div class="tip-number">1</div>
+                    <h3>Always know your mode</h3>
+                    <p>Check the bottom of the screen to see which mode you're in</p>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-number">2</div>
+                    <h3>Use ESC frequently</h3>
+                    <p>When in doubt, press ESC to get to Command Mode</p>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-number">3</div>
+                    <h3>Practice navigation</h3>
+                    <p>Learn <kbd>h</kbd>, <kbd>j</kbd>, <kbd>k</kbd>, <kbd>l</kbd> for cursor movement</p>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-number">4</div>
+                    <h3>Master search</h3>
+                    <p><code>/</code> and <code>?</code> are your friends for quick navigation</p>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-number">5</div>
+                    <h3>Use visual mode</h3>
+                    <p><kbd>v</kbd> for precise text selection</p>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-number">6</div>
+                    <h3>Learn the dot command</h3>
+                    <p><kbd>.</kbd> repeats your last action</p>
+                </div>
+                <div class="tip-card">
+                    <div class="tip-number">7</div>
+                    <h3>Customize your ~/.vimrc</h3>
+                    <p>Make VIM work the way you want</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>VIM Editor Reference Guide | Master the editor, master the command line ⌨️</p>
+    </footer>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Highlight current section in sidebar
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
