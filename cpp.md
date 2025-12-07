@@ -2807,9 +2807,9 @@ int x = p.getX();     // OK - const function
 
 ## 9. Operator Overloading
 
-### Why Overload Operators?
+### ⁉️ 🤔 What is Operator Overloading and Why We Need Them?
 
-Enable intuitive syntax for custom types:
+In general, it means using traditional operators such as `+`, `=`, `*`, `etc.` with user-defined types. This allows users to define types that behave similar to the built-in types. It can make the code more readable and writable. Take a look at below example:
 
 ```cpp
 // Instead of:
@@ -2830,6 +2830,27 @@ result = vector1 + vector2;  // Natural mathematical syntax
 - Can be confusing if misused
 - Performance implications if not careful
 - Must maintain semantic consistency
+
+### 🚨 Which Operators Can be Overloaded and Which Cannot?
+
+> ✅ All operators can be overloaded except those listed below:
+
+| Operator | Description |
+|----------|-------------|
+| `::` | Scope resolution operator |
+| `:?` | Ternary conditional operator |
+| `.*` | Pointer-to-member operator |
+| `.` | Member access operator |
+| `sizeof` | Size-of operator |
+
+### ⚖️ 🏛️ 👨🏻‍⚖️ 📜 🚔 Basic Rules for Overloading Operators
+
+> 1. Precedence and Associativity Cannot be Changed
+> 2. `arity` Cannot be Changed (i.e. Cannot Make the Division Operator Unary)
+> 3. Cannot Overload Operators for Premitive Type (e.g. `ini`, `double`, `etc.`)
+> 4. Cannot Create New Operators
+> 5. `[]`, `()`, `->`, and the Assignment Operator (`=`) **Must** be Declared as Member Methods
+> 6. Other Operators Can be Declared as Member Methods or Global Functions
 
 ### Basic Operator Overloading
 
@@ -2975,7 +2996,24 @@ public:
 // auto operator<=>(const Fraction& other) const = default;
 ```
 
-### Assignment Operator - CRITICAL
+### 🟰 Assignment Operator - CRITICAL 📢❗🚨
+
+> ⚠️ Do not confuse **assignment** with **initialization**
+
+C++ provides a default assignmnet operator used for assigning one object to another:
+
+```cpp
+MyString s1 {"Hamed"};
+MyString s2 = s1;       // **NOT** Assignmnet. This is same as MyString s2{s1}, a deep copy
+
+s2 = s1;                // Now, this on the other hand, is an assignment
+```
+
+Default is memberwise assignment (shallow copy)
+> ❗If we have raw pointer data member we must deep copy.
+> Overloading the copy assignment operator (deep copy)
+>
+> <p align="center"><code>Type &Type::operator=(const Type &rhs);</code></p>
 
 ```cpp
 class String {
